@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { ToolExecutionResultRouter } from "./messageRenderer";
 import { ToolIcon } from "./ToolIcon";
 import { cn } from "../utils/cn";
@@ -22,7 +21,7 @@ const isSmallResult = (result: unknown): boolean => {
   return true;
 };
 
-const getResultSummary = (result: unknown, toolName: string): string => {
+const getResultSummary = (result: unknown): string => {
   if (typeof result === "object" && result !== null) {
     const r = result as Record<string, unknown>;
 
@@ -90,12 +89,11 @@ export const CollapsibleToolResult = ({
   toolResult,
   defaultExpanded,
 }: Props) => {
-  const { t } = useTranslation("components");
   const toolName = getToolName(toolUse, toolResult);
   const shouldExpandByDefault = defaultExpanded ?? isSmallResult(toolResult);
   const [isExpanded, setIsExpanded] = useState(shouldExpandByDefault);
 
-  const summary = getResultSummary(toolResult, toolName);
+  const summary = getResultSummary(toolResult);
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg mt-2 overflow-hidden">
@@ -124,7 +122,7 @@ export const CollapsibleToolResult = ({
 
       {isExpanded && (
         <div className="px-3 pb-3">
-          <ToolExecutionResultRouter toolResult={toolResult} depth={0} />
+          <ToolExecutionResultRouter toolResult={toolResult as Record<string, unknown> | string} depth={0} />
         </div>
       )}
     </div>

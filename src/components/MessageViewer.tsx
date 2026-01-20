@@ -51,7 +51,6 @@ interface MessageNodeProps {
 
 interface MessageHeaderProps {
   message: ClaudeMessage;
-  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 const hasSystemCommandContent = (message: ClaudeMessage): boolean => {
@@ -63,7 +62,8 @@ const hasSystemCommandContent = (message: ClaudeMessage): boolean => {
          /<command-message>[\s\S]*?<\/command-message>/.test(content);
 };
 
-const MessageHeader = ({ message, t }: MessageHeaderProps) => {
+const MessageHeader = ({ message }: MessageHeaderProps) => {
+  const { t } = useTranslation("components");
   const isToolResultMessage = !!message.toolUseResult && message.type === "user";
   const isSystemContent = hasSystemCommandContent(message);
   const toolName = isToolResultMessage
@@ -197,9 +197,7 @@ const isEmptyMessage = (message: ClaudeMessage): boolean => {
   return stripped.length === 0;
 };
 
-const ClaudeMessageNode = React.memo(({ message, depth, isCurrentMatch, isMatch, searchQuery, filterType = "content", currentMatchIndex }: MessageNodeProps) => {
-  const { t } = useTranslation("components");
-
+const ClaudeMessageNode = React.memo(({ message, isCurrentMatch, isMatch, searchQuery, filterType = "content", currentMatchIndex }: MessageNodeProps) => {
   if (message.isSidechain) {
     return null;
   }
@@ -235,7 +233,7 @@ const ClaudeMessageNode = React.memo(({ message, depth, isCurrentMatch, isMatch,
     >
       <div className="max-w-4xl mx-auto">
         {/* Compact message header */}
-        <MessageHeader message={message} t={t} />
+        <MessageHeader message={message} />
 
         {/* 메시지 내용 */}
         <div className="w-full">
@@ -645,7 +643,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           className={cn(
             "text-xs px-2 py-1.5 rounded-md transition-colors whitespace-nowrap",
             "hover:bg-gray-200 dark:hover:bg-gray-700",
-            COLORS.ui.background.tertiary,
+            "bg-gray-100 dark:bg-gray-800",
             COLORS.ui.text.secondary
           )}
           title={t("messageViewer.filterType")}

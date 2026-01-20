@@ -4,7 +4,6 @@ import { Terminal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Renderer } from "../../shared/RendererHeader";
 import { cn } from "../../utils/cn";
-import { COLORS } from "../../constants/colors";
 
 type Props = {
   command: string;
