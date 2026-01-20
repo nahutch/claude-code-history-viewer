@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { Sun, Moon, Laptop } from "lucide-react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme";
 import { COLORS } from "@/constants/colors";
 

@@ -20,7 +20,7 @@ import { Highlight, themes } from "prism-react-renderer";
 import { useTheme } from "@/contexts/theme";
 import type { RecentEditsResult, RecentFileEdit } from "../types";
 import { COLORS } from "../constants/colors";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 
 interface RecentEditsViewerProps {
   recentEdits: RecentEditsResult | null;

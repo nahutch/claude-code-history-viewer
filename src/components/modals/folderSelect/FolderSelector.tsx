@@ -3,7 +3,7 @@ import { Folder, AlertCircle } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "@/constants/colors";
 
 interface FolderSelectorProps {

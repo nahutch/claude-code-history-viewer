@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bot, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 
 type Props = {
   thinking: string;

@@ -9,7 +9,7 @@ import {
 
 import { Settings, RefreshCw, MessageSquare, Folder, Download, Loader2 } from "lucide-react";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "@/constants/colors";
 
 import { useGitHubUpdater } from "@/hooks/useGitHubUpdater";

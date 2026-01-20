@@ -2,7 +2,7 @@ import React from "react";
 import { Highlight, themes } from "prism-react-renderer";
 import { ToolIcon } from "../ToolIcon";
 import { COLORS } from "../../constants/colors";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 
 interface ClaudeToolUseDisplayProps {
   toolUse: Record<string, unknown>;

@@ -74,7 +74,7 @@ export const AdvancedTextDiff = ({
       colorClasses = "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-l-2 border-red-400 dark:border-red-500";
       title = t("advancedTextDiff.removed");
     } else {
-      colorClasses = "text-gray-700 dark:text-gray-300";
+      colorClasses = "text-foreground";
       title = t("advancedTextDiff.unchanged");
     }
 
@@ -130,7 +130,7 @@ export const AdvancedTextDiff = ({
 
       {/* Diff Mode Selector */}
       <div className="mb-3">
-        <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+        <div className="text-xs font-medium text-muted-foreground mb-2">
           {t("advancedTextDiff.comparisonMethod")}
         </div>
         <div className="flex flex-wrap gap-1">
@@ -150,7 +150,7 @@ export const AdvancedTextDiff = ({
               className={`px-2 py-1 text-xs rounded transition-colors ${
                 currentMode === mode
                   ? "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 font-medium"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  : "bg-secondary text-foreground hover:bg-secondary"
               }`}
             >
               {getModeLabel(mode)}
@@ -161,23 +161,23 @@ export const AdvancedTextDiff = ({
 
       {/* Statistics */}
       <div className="mb-3 grid grid-cols-3 gap-2 text-xs">
-        <div className="bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-600">
-          <div className="text-gray-600 dark:text-gray-400">{t("advancedTextDiff.additions")}</div>
+        <div className="bg-card p-2 rounded border border-border">
+          <div className="text-muted-foreground">{t("advancedTextDiff.additions")}</div>
           <div className="font-medium text-green-600 dark:text-green-400">+{stats.additions}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-600">
-          <div className="text-gray-600 dark:text-gray-400">{t("advancedTextDiff.deletions")}</div>
+        <div className="bg-card p-2 rounded border border-border">
+          <div className="text-muted-foreground">{t("advancedTextDiff.deletions")}</div>
           <div className="font-medium text-red-600 dark:text-red-400">-{stats.deletions}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-600">
-          <div className="text-gray-600 dark:text-gray-400">{t("advancedTextDiff.same")}</div>
-          <div className="font-medium text-gray-600 dark:text-gray-400">{stats.unchanged}</div>
+        <div className="bg-card p-2 rounded border border-border">
+          <div className="text-muted-foreground">{t("advancedTextDiff.same")}</div>
+          <div className="font-medium text-muted-foreground">{stats.unchanged}</div>
         </div>
       </div>
 
       {/* Diff Content */}
       {(!shouldCollapse || isExpanded) && (
-        <div className="bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-600 max-h-96 overflow-y-auto">
+        <div className="bg-card p-3 rounded border border-border max-h-96 overflow-y-auto">
           <div className="font-mono text-sm leading-relaxed">
             {diffResults.map((part, index) => renderDiffPart(part, index))}
           </div>
@@ -185,11 +185,11 @@ export const AdvancedTextDiff = ({
       )}
 
       {shouldCollapse && !isExpanded && (
-        <div className="bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-600 text-center">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="bg-card p-3 rounded border border-border text-center">
+          <div className="text-sm text-muted-foreground">
             {t("advancedTextDiff.manyChanges")}
           </div>
-          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             {t("advancedTextDiff.changeSummary", {
               count: diffResults.length,
               chars: oldText.length + newText.length,

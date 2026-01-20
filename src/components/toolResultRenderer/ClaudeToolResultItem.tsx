@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 import { Highlight, themes } from "prism-react-renderer";
 import { useCopyButton } from "../../hooks/useCopyButton";
 import { Renderer } from "../../shared/RendererHeader";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../../constants/colors";
 import { HighlightedText } from "../common";
 

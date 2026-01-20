@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { CheckCircle, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../constants/colors";
 
 interface UpToDateNotificationProps {

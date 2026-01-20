@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Renderer } from "../../shared/RendererHeader";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../../constants/colors";
 
 type Props = {

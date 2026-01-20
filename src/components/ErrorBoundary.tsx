@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, Mail, Copy, RefreshCw } from "lucide-react";
 import { COLORS } from "../constants/colors";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 import { withTranslation, type WithTranslation } from "react-i18next";
 
 interface Props extends WithTranslation {

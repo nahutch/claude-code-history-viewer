@@ -142,7 +142,7 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
   // Fallback for other message types like 'system'
   return (
     <div className="prose prose-sm max-w-none">
-      <div className="whitespace-pre-wrap text-gray-800">
+      <div className="whitespace-pre-wrap text-foreground">
         {searchQuery ? (
           <HighlightedText
             text={content}

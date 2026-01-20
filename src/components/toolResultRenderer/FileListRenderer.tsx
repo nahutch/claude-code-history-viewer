@@ -1,7 +1,7 @@
 import { FileText } from "lucide-react";
 import { Renderer } from "../../shared/RendererHeader";
 import { useTranslation } from 'react-i18next';
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../../constants/colors";
 
 type Props = {

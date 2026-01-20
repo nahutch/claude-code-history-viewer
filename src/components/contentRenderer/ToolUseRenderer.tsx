@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { ToolIcon } from "../ToolIcon";
 import { Renderer } from "../../shared/RendererHeader";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../../constants/colors";
 import { FileEditRenderer } from "../toolResultRenderer/FileEditRenderer";
 import { HighlightedText } from "../common";

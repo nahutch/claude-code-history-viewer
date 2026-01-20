@@ -1,7 +1,7 @@
 import { Clipboard, Circle, CheckCircle, MinusCircle, X } from "lucide-react";
 import { Renderer } from "../../shared/RendererHeader";
 import { COLORS } from "../../constants/colors";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
 type Props = {

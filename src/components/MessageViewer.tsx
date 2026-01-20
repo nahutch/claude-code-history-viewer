@@ -18,7 +18,7 @@ import {
 } from "./messageRenderer";
 import { getToolName } from "./CollapsibleToolResult";
 import { extractClaudeMessageContent } from "../utils/messageUtils";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../constants/colors";
 import { formatTime, formatTimeShort } from "../utils/time";
 import { getShortModelName } from "../utils/model";
@@ -73,7 +73,7 @@ const MessageHeader = ({ message }: MessageHeaderProps) => {
 
   return (
     <div className={cn(
-      "flex items-center mb-1 text-xs text-gray-500 dark:text-gray-400",
+      "flex items-center mb-1 text-xs text-muted-foreground",
       isLeftAligned ? "justify-between" : "justify-end"
     )}>
       <div className="flex items-center gap-1.5">
@@ -99,18 +99,18 @@ const MessageHeader = ({ message }: MessageHeaderProps) => {
 
       {message.type === "assistant" && message.model && (
         <div className="relative group flex items-center gap-1">
-          <span className="text-gray-400 dark:text-gray-500">{getShortModelName(message.model)}</span>
+          <span className="text-muted-foreground">{getShortModelName(message.model)}</span>
           {message.usage && (
             <>
-              <HelpCircle className="w-3 h-3 cursor-help text-gray-400 dark:text-gray-500" />
-              <div className="absolute bottom-full mb-2 right-0 w-52 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg p-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
+              <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground" />
+              <div className="absolute bottom-full mb-2 right-0 w-52 bg-popover text-popover-foreground text-xs rounded-lg p-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10 border border-border">
                 <p className="mb-1"><strong>{t("assistantMessageDetails.model")}:</strong> {message.model}</p>
                 <p className="mb-1"><strong>{t("messageViewer.time")}:</strong> {formatTime(message.timestamp)}</p>
                 {message.usage.input_tokens && <p>{t("assistantMessageDetails.input")}: {message.usage.input_tokens.toLocaleString()}</p>}
                 {message.usage.output_tokens && <p>{t("assistantMessageDetails.output")}: {message.usage.output_tokens.toLocaleString()}</p>}
                 {message.usage.cache_creation_input_tokens ? <p>{t("assistantMessageDetails.cacheCreation")}: {message.usage.cache_creation_input_tokens.toLocaleString()}</p> : null}
                 {message.usage.cache_read_input_tokens ? <p>{t("assistantMessageDetails.cacheRead")}: {message.usage.cache_read_input_tokens.toLocaleString()}</p> : null}
-                <div className="absolute right-4 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800 dark:border-t-gray-700"></div>
+                <div className="absolute right-4 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-popover"></div>
               </div>
             </>
           )}
@@ -224,7 +224,7 @@ const ClaudeMessageNode = React.memo(({ message, isCurrentMatch, isMatch, search
       data-message-uuid={message.uuid}
       className={cn(
         "w-full px-4 py-2 transition-colors duration-300",
-        message.isSidechain && "bg-gray-100 dark:bg-gray-800",
+        message.isSidechain && "bg-muted",
         // 현재 매치된 메시지 강조
         isCurrentMatch && "bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500",
         // 다른 매치 메시지 연한 강조
@@ -544,7 +544,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   if (isLoading && messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center h-full">
-        <div className="flex items-center space-x-2 text-gray-500">
+        <div className="flex items-center space-x-2 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>{t("messageViewer.loadingMessages")}</span>
         </div>
@@ -554,11 +554,11 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-gray-500 h-full">
+      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground h-full">
         <div className="mb-4">
-          <MessageCircle className="w-16 h-16 mx-auto text-gray-400" />
+          <MessageCircle className="w-16 h-16 mx-auto text-muted-foreground/50" />
         </div>
-        <h3 className="text-lg font-medium mb-2">
+        <h3 className="text-lg font-medium mb-2 text-foreground">
           {t("messageViewer.noMessages")}
         </h3>
         <p className="text-sm text-center whitespace-pre-line">
@@ -629,8 +629,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         role="search"
         className={cn(
           "flex items-center gap-3 px-4 py-2 border-b sticky top-0 z-10",
-          COLORS.ui.background.secondary,
-          COLORS.ui.border.light
+          "bg-secondary/50 border-border"
         )}
       >
         {/* Filter Toggle */}
@@ -642,9 +641,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           }}
           className={cn(
             "text-xs px-2 py-1.5 rounded-md transition-colors whitespace-nowrap",
-            "hover:bg-gray-200 dark:hover:bg-gray-700",
-            "bg-gray-100 dark:bg-gray-800",
-            COLORS.ui.text.secondary
+            "hover:bg-secondary/80",
+            "bg-secondary text-secondary-foreground"
           )}
           title={t("messageViewer.filterType")}
         >
@@ -655,10 +653,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search className={cn(
-            "absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4",
-            COLORS.ui.text.muted
-          )} />
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             ref={searchInputRef}
             type="text"
@@ -669,16 +664,14 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
             aria-label={t("messageViewer.searchPlaceholder")}
             className={cn(
               "w-full pl-8 pr-8 py-1.5 rounded-md border text-sm",
-              "focus:outline-none focus:ring-2 focus:ring-blue-500",
-              COLORS.ui.background.primary,
-              COLORS.ui.border.light,
-              COLORS.ui.text.primary
+              "focus:outline-none focus:ring-2 focus:ring-ring",
+              "bg-background border-border text-foreground"
             )}
           />
           {searchQuery && (
             isSearchPending ? (
               <div className="absolute right-2.5 top-1/2 transform -translate-y-1/2">
-                <Loader2 className={cn("w-3.5 h-3.5 animate-spin", COLORS.ui.text.muted)} />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <button
@@ -687,8 +680,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                 aria-label="Clear search"
                 className={cn(
                   "absolute right-2 top-1/2 transform -translate-y-1/2",
-                  "p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700",
-                  COLORS.ui.text.muted
+                  "p-0.5 rounded-full hover:bg-secondary text-muted-foreground"
                 )}
               >
                 <X className="w-3.5 h-3.5" />
@@ -699,7 +691,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
         {/* Match Navigation */}
         {sessionSearch.query && sessionSearch.matches && sessionSearch.matches.length > 0 && (
-          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <span className="font-medium tabular-nums">
               {sessionSearch.currentMatchIndex + 1}/{sessionSearch.matches.length}
             </span>
@@ -711,7 +703,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
               title="Shift+Enter"
               className={cn(
                 "p-1 rounded transition-colors",
-                "hover:bg-gray-200 dark:hover:bg-gray-700",
+                "hover:bg-secondary",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
@@ -725,7 +717,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
               title="Enter"
               className={cn(
                 "p-1 rounded transition-colors",
-                "hover:bg-gray-200 dark:hover:bg-gray-700",
+                "hover:bg-secondary",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
@@ -738,13 +730,13 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         <div className="flex-1" />
 
         {/* Meta Info */}
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{messages.length} {t("messageViewer.messagesShort")}</span>
           {selectedSession?.has_tool_use && (
             <span>· {t("messageViewer.toolsUsed")}</span>
           )}
           {selectedSession?.has_errors && (
-            <span className="text-orange-500 dark:text-orange-400">· {t("messageViewer.hasErrors")}</span>
+            <span className="text-destructive">· {t("messageViewer.hasErrors")}</span>
           )}
         </div>
       </div>
@@ -781,9 +773,9 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         <div className="max-w-4xl mx-auto">
           {/* 검색 결과 없음 */}
           {sessionSearch.query && (!sessionSearch.matches || sessionSearch.matches.length === 0) && !sessionSearch.isSearching && (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-              <Search className="w-12 h-12 mb-4 text-gray-400" />
-              <p className="text-lg font-medium mb-2">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Search className="w-12 h-12 mb-4 text-muted-foreground/50" />
+              <p className="text-lg font-medium mb-2 text-foreground">
                 {t("messageViewer.noSearchResults")}
               </p>
               <p className="text-sm">
@@ -795,7 +787,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           {/* 메시지 목록 */}
           {displayMessages.length > 0 && !sessionSearch.query && (
             <div className="flex items-center justify-center py-4">
-              <div className={cn("text-sm", COLORS.ui.text.muted)}>
+              <div className="text-sm text-muted-foreground">
                 {t("messageViewer.allMessagesLoaded", {
                   count: messages.length,
                 })}

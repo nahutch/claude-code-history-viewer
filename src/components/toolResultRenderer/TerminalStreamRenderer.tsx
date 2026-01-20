@@ -3,7 +3,7 @@
 import { Terminal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Renderer } from "../../shared/RendererHeader";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 
 type Props = {
   command: string;

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { EnhancedDiffViewer } from "../EnhancedDiffViewer";
 import { FileContent } from "../FileContent";
 import { Renderer } from "../../shared/RendererHeader";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../../constants/colors";
 
 type Props = {

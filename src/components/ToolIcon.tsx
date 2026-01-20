@@ -8,7 +8,7 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 
 type Props = {
   toolName: string;

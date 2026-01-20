@@ -9,7 +9,7 @@ import { useCopyButton } from "../hooks/useCopyButton";
 import { useTheme } from "@/contexts/theme";
 import { useTranslation } from "react-i18next";
 import { Renderer } from "../shared/RendererHeader";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 import { COLORS } from "../constants/colors";
 
 export const FileContent = ({

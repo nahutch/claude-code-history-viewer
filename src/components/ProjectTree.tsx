@@ -8,10 +8,12 @@ import {
   ChevronRight,
   MessageCircle,
   Database,
+  Clock,
+  Hash,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ClaudeProject, ClaudeSession } from "../types";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 import { getLocale } from "../utils/time";
 
 interface ProjectTreeProps {
@@ -52,17 +54,11 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       const locale = getLocale(currentLanguage);
 
       if (diffMins < 60) {
-        return t("common:time.minutesAgo", "{{count}} minutes ago", {
-          count: diffMins,
-        });
+        return t("common:time.minutesAgo", "{{count}}m", { count: diffMins });
       } else if (diffHours < 24) {
-        return t("common:time.hoursAgo", "{{count}} hours ago", {
-          count: diffHours,
-        });
+        return t("common:time.hoursAgo", "{{count}}h", { count: diffHours });
       } else if (diffDays < 7) {
-        return t("common:time.daysAgo", "{{count}} days ago", {
-          count: diffDays,
-        });
+        return t("common:time.daysAgo", "{{count}}d", { count: diffDays });
       } else {
         return date.toLocaleDateString(locale, {
           month: "short",
@@ -79,93 +75,113 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   };
 
   return (
-    <div className="max-w-80 w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
+    <aside className="w-72 flex-shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+      {/* Sidebar Header */}
+      <div className="px-4 py-3 border-b border-sidebar-border">
+        <div className="flex items-center justify-between">
+          <span className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("components:project.explorer", "Explorer")}
+          </span>
+          <span className="text-2xs font-mono text-muted-foreground">
+            {projects.length}
+          </span>
+        </div>
+      </div>
+
       {/* Projects List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+      <div className="flex-1 overflow-y-auto scrollbar-thin py-2">
         {projects.length === 0 ? (
-          <div className="p-4 text-center text-gray-400 dark:text-gray-600 h-full flex items-center">
-            <div className="flex flex-col justify-center w-full">
-              <div className="mb-2">
-                <Folder className="w-8 h-8 mx-auto text-gray-500 dark:text-gray-400" />
-              </div>
-              <p className="text-sm">
-                {t("components:project.notFound", "No projects found")}
-              </p>
-            </div>
+          <div className="px-4 py-12 text-center">
+            <Folder className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
+            <p className="text-sm text-muted-foreground">
+              {t("components:project.notFound", "No projects found")}
+            </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-0.5 animate-stagger">
             {/* Global Stats Button */}
             <button
               onClick={onGlobalStatsClick}
               className={cn(
-                "w-full px-4 py-3 flex items-center space-x-3 text-left transition-colors",
-                "hover:bg-gray-200 dark:hover:bg-gray-700",
-                isViewingGlobalStats
-                  ? "bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500"
-                  : "bg-transparent"
+                "sidebar-item w-full flex items-center gap-3 mx-2",
+                "text-left transition-all duration-200",
+                isViewingGlobalStats && "active"
               )}
+              style={{ width: "calc(100% - 16px)" }}
             >
-              <Database
+              <div
                 className={cn(
-                  "w-5 h-5 flex-shrink-0",
-                  isViewingGlobalStats
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
+                  "w-8 h-8 rounded-lg flex items-center justify-center",
+                  "bg-accent/10 text-accent"
                 )}
-              />
+              >
+                <Database className="w-4 h-4" />
+              </div>
               <div className="flex-1 min-w-0">
-                <div
-                  className={cn(
-                    "font-semibold truncate",
-                    isViewingGlobalStats
-                      ? "text-blue-900 dark:text-blue-100"
-                      : "text-gray-900 dark:text-gray-100"
-                  )}
-                >
-                  {t("components:project.globalStats", "📊 Global Statistics")}
+                <div className="text-sm font-medium text-sidebar-foreground">
+                  {t("components:project.globalStats", "Global Statistics")}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {t(
-                    "components:project.globalStatsDescription",
-                    "All projects overview"
-                  )}
+                <div className="text-2xs text-muted-foreground">
+                  {t("components:project.globalStatsDescription", "All projects overview")}
                 </div>
               </div>
             </button>
 
-            {/* Projects List */}
+            {/* Divider */}
+            <div className="my-2 mx-4 h-px bg-sidebar-border" />
+
+            {/* Projects */}
             {projects.map((project) => {
               const isExpanded = expandedProject === project.path;
 
               return (
                 <div key={project.path}>
-                  {/* Project Header */}
+                  {/* Project Item */}
                   <button
                     onClick={() => {
                       onProjectSelect(project);
                       toggleProject(project.path);
                     }}
-                    className="text-left w-full p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                    className={cn(
+                      "w-full px-4 py-2 flex items-center gap-2",
+                      "text-left transition-all duration-200",
+                      "hover:bg-sidebar-accent/50",
+                      isExpanded && "bg-sidebar-accent/30"
+                    )}
                   >
-                    <div className="flex items-center space-x-2">
+                    {/* Expand Icon */}
+                    <span className="text-muted-foreground">
                       {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <ChevronDown className="w-3.5 h-3.5" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <ChevronRight className="w-3.5 h-3.5" />
                       )}
-                      <Folder className="w-4 h-4 text-blue-400" />
-                      <div className="min-w-0 flex-1 flex items-center">
-                        <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm max-w-56">
-                          {project.name}
-                        </p>
-                      </div>
-                    </div>
+                    </span>
+
+                    {/* Folder Icon */}
+                    <Folder
+                      className={cn(
+                        "w-4 h-4 flex-shrink-0",
+                        isExpanded ? "text-accent" : "text-muted-foreground"
+                      )}
+                    />
+
+                    {/* Project Name */}
+                    <span
+                      className={cn(
+                        "text-sm truncate flex-1",
+                        isExpanded
+                          ? "text-sidebar-foreground font-medium"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      {project.name}
+                    </span>
                   </button>
 
-                  {/* Sessions for expanded project */}
+                  {/* Sessions List */}
                   {isExpanded && sessions.length > 0 && !isLoading && (
-                    <div className="ml-6 space-y-1">
+                    <div className="ml-4 pl-3 border-l border-sidebar-border/50 space-y-0.5 py-1">
                       {sessions.map((session) => {
                         const isSessionSelected =
                           selectedSession?.session_id === session.session_id;
@@ -174,91 +190,80 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                           <button
                             key={session.session_id}
                             onClick={() => {
-                              if (isSessionSelected) return;
-                              onSessionSelect(session);
+                              if (!isSessionSelected) {
+                                onSessionSelect(session);
+                              }
                             }}
                             className={cn(
-                              "w-full text-left p-3 rounded-lg transition-colors",
-                              isSessionSelected
-                                ? "bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-400 dark:border-blue-500"
-                                : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                              "sidebar-item w-full flex flex-col gap-1 py-2.5",
+                              "text-left transition-all duration-200",
+                              isSessionSelected && "active"
                             )}
+                            style={{ width: "calc(100% - 8px)" }}
                           >
-                            <div className="flex items-start space-x-3">
-                              <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between">
-                                  <h3
-                                    className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate"
-                                    title={
-                                      session.summary ||
-                                      `${t(
-                                        "components:session.id",
-                                        "Session ID"
-                                      )} ${session.actual_session_id}`
-                                    }
-                                  >
-                                    {session.summary ||
-                                      t(
-                                        "components:session.summaryNotFound",
-                                        "Summary not found"
-                                      )}
-                                  </h3>
-                                  <div className="flex items-center space-x-1">
-                                    {session.has_tool_use && (
-                                      <span
-                                        title={t(
-                                          "components:tools.toolUsed",
-                                          "Tool used"
-                                        )}
-                                      >
-                                        <Wrench className="w-3 h-3 text-blue-400" />
-                                      </span>
-                                    )}
-                                    {session.has_errors && (
-                                      <span
-                                        title={t(
-                                          "components:tools.errorOccurred",
-                                          "Error occurred"
-                                        )}
-                                      >
-                                        <AlertTriangle className="w-3 h-3 text-red-400" />
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                            {/* Session Header */}
+                            <div className="flex items-start gap-2">
+                              <MessageCircle
+                                className={cn(
+                                  "w-3.5 h-3.5 mt-0.5 flex-shrink-0",
+                                  isSessionSelected
+                                    ? "text-accent"
+                                    : "text-muted-foreground"
+                                )}
+                              />
+                              <span
+                                className={cn(
+                                  "text-xs leading-tight line-clamp-2",
+                                  isSessionSelected
+                                    ? "text-sidebar-foreground font-medium"
+                                    : "text-muted-foreground"
+                                )}
+                              >
+                                {session.summary ||
+                                  t(
+                                    "components:session.summaryNotFound",
+                                    "No summary"
+                                  )}
+                              </span>
+                            </div>
 
-                                <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1">
-                                  <span className="whitespace-nowrap">
-                                    {formatTimeAgo(session.last_modified)}
-                                  </span>
-                                  <span>•</span>
-                                  <span className="whitespace-nowrap">
-                                    {t(
-                                      "components:message.count",
-                                      "{{count}} messages",
-                                      {
-                                        count: session.message_count,
-                                      }
-                                    )}
-                                  </span>
-                                  <span>•</span>
-                                  <span
-                                    className="truncate"
-                                    title={`${t(
-                                      "components:session.actualId",
-                                      "Actual ID"
-                                    )}: ${session.actual_session_id}`}
-                                  >
-                                    ID: {session.actual_session_id.slice(0, 8)}
-                                    ...
-                                  </span>
-                                </div>
-                              </div>
+                            {/* Session Meta */}
+                            <div className="flex items-center gap-2 ml-5.5 text-2xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatTimeAgo(session.last_modified)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Hash className="w-3 h-3" />
+                                {session.message_count}
+                              </span>
+                              {session.has_tool_use && (
+                                <Wrench className="w-3 h-3 text-accent/70" />
+                              )}
+                              {session.has_errors && (
+                                <AlertTriangle className="w-3 h-3 text-destructive" />
+                              )}
                             </div>
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* Loading State */}
+                  {isExpanded && isLoading && (
+                    <div className="ml-7 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full animate-shimmer" />
+                        <div className="h-3 w-24 rounded animate-shimmer" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty Sessions */}
+                  {isExpanded && sessions.length === 0 && !isLoading && (
+                    <div className="ml-7 py-3 text-2xs text-muted-foreground">
+                      {t("components:session.notFound", "No sessions")}
                     </div>
                   )}
                 </div>
@@ -267,6 +272,22 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
           </div>
         )}
       </div>
-    </div>
+
+      {/* Sidebar Footer */}
+      <div className="px-4 py-3 border-t border-sidebar-border">
+        <div className="flex items-center justify-between text-2xs text-muted-foreground">
+          <span>
+            {t("components:project.count", "{{count}} projects", {
+              count: projects.length,
+            })}
+          </span>
+          <span>
+            {t("components:session.count", "{{count}} sessions", {
+              count: sessions.length,
+            })}
+          </span>
+        </div>
+      </div>
+    </aside>
   );
 };

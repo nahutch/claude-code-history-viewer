@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import type { ToolUsageStats, ActivityHeatmap } from "../types";
 import { formatTime, formatDuration } from "../utils/time";
 import { COLORS } from "../constants/colors";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 import { useAppStore } from "../store/useAppStore";
 import { useAnalytics } from "../hooks/useAnalytics";
 

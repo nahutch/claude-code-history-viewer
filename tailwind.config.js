@@ -4,52 +4,122 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      /* Typography */
+      fontFamily: {
+        sans: ["IBM Plex Sans", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+      },
+      fontSize: {
+        "2xs": ["0.625rem", { lineHeight: "0.875rem" }],
+        "3xl": ["1.875rem", { lineHeight: "2.25rem", letterSpacing: "-0.02em" }],
+        "4xl": ["2.25rem", { lineHeight: "2.5rem", letterSpacing: "-0.025em" }],
+        "5xl": ["3rem", { lineHeight: "1.1", letterSpacing: "-0.03em" }],
+      },
+      letterSpacing: {
+        tighter: "-0.04em",
+        tight: "-0.025em",
+        wide: "0.025em",
+        wider: "0.05em",
+        widest: "0.1em",
+      },
+
+      /* Colors - Semantic mapping to CSS variables (OKLCH) */
       colors: {
-        "claude-blue": "#1f2937",
-        "claude-blue-light": "#374151",
-        "claude-orange": "#f97316",
-        gray: {
-          850: "#1a202e",
-        },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+        sidebar: {
+          DEFAULT: "var(--sidebar)",
+          foreground: "var(--sidebar-foreground)",
+          primary: "var(--sidebar-primary)",
+          "primary-foreground": "var(--sidebar-primary-foreground)",
+          accent: "var(--sidebar-accent)",
+          "accent-foreground": "var(--sidebar-accent-foreground)",
+          border: "var(--sidebar-border)",
+          ring: "var(--sidebar-ring)",
+        },
+        /* Additional semantic colors */
+        success: {
+          DEFAULT: "var(--success)",
+          foreground: "var(--success-foreground)",
+        },
+        warning: {
+          DEFAULT: "var(--warning)",
+          foreground: "var(--warning-foreground)",
+        },
+        info: {
+          DEFAULT: "var(--info)",
+          foreground: "var(--info-foreground)",
+        },
+        /* Tool-specific colors */
+        tool: {
+          code: "var(--tool-code)",
+          file: "var(--tool-file)",
+          search: "var(--tool-search)",
+          task: "var(--tool-task)",
         },
       },
+
+      /* Border Radius */
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
       },
+
+      /* Spacing - 4px base scale */
+      spacing: {
+        "4.5": "1.125rem",
+        "5.5": "1.375rem",
+        "18": "4.5rem",
+        "22": "5.5rem",
+      },
+
+      /* Box Shadow - Layered, directional */
+      boxShadow: {
+        "sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "DEFAULT": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        "md": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+        "lg": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        "xl": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+        "glow": "0 0 20px oklch(0.75 0.18 55 / 0.3)",
+        "glow-sm": "0 0 10px oklch(0.75 0.18 55 / 0.2)",
+        "inner-glow": "inset 0 0 0 1px oklch(1 0 0 / 0.05)",
+      },
+
+      /* Keyframes & Animations */
       keyframes: {
         "fade-in": {
           "0%": { opacity: "0" },
@@ -59,41 +129,64 @@ export default {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" },
         },
-        "zoom-in": {
-          "0%": { transform: "scale(0.95)" },
-          "100%": { transform: "scale(1)" },
+        "slide-up": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        "zoom-out": {
-          "0%": { transform: "scale(1)" },
-          "100%": { transform: "scale(0.95)" },
+        "slide-down": {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        "slide-in-from-top": {
-          "0%": { transform: "translateY(-8px)" },
-          "100%": { transform: "translateY(0)" },
+        "slide-left": {
+          "0%": { opacity: "0", transform: "translateX(10px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
         },
-        "slide-in-from-bottom": {
-          "0%": { transform: "translateY(8px)" },
-          "100%": { transform: "translateY(0)" },
+        "slide-right": {
+          "0%": { opacity: "0", transform: "translateX(-10px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
         },
-        "slide-in-from-left": {
-          "0%": { transform: "translateX(-8px)" },
-          "100%": { transform: "translateX(0)" },
+        "scale-in": {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
         },
-        "slide-in-from-right": {
-          "0%": { transform: "translateX(8px)" },
-          "100%": { transform: "translateX(0)" },
+        "scale-out": {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(0.95)" },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+        "pulse-subtle": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
         },
       },
       animation: {
-        "fade-in": "fade-in 0.15s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
         "fade-out": "fade-out 0.15s ease-in",
-        "zoom-in": "zoom-in 0.15s ease-out",
-        "zoom-out": "zoom-out 0.15s ease-in",
-        "slide-in-from-top": "slide-in-from-top 0.15s ease-out",
-        "slide-in-from-bottom": "slide-in-from-bottom 0.15s ease-out",
-        "slide-in-from-left": "slide-in-from-left 0.15s ease-out",
-        "slide-in-from-right": "slide-in-from-right 0.15s ease-out",
-        "animate-in": "fade-in 0.15s ease-out, zoom-in 0.15s ease-out",
+        "slide-up": "slide-up 0.3s ease-out",
+        "slide-down": "slide-down 0.3s ease-out",
+        "slide-left": "slide-left 0.3s ease-out",
+        "slide-right": "slide-right 0.3s ease-out",
+        "scale-in": "scale-in 0.2s ease-out",
+        "scale-out": "scale-out 0.15s ease-in",
+        "shimmer": "shimmer 1.5s ease-in-out infinite",
+        "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
+      },
+
+      /* Backdrop Blur */
+      backdropBlur: {
+        xs: "2px",
+      },
+
+      /* Transition */
+      transitionDuration: {
+        "250": "250ms",
+        "350": "350ms",
+      },
+      transitionTimingFunction: {
+        "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },

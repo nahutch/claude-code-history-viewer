@@ -37,7 +37,7 @@ export const ClaudeContentArrayRenderer = ({
       {content.map((item, index) => {
         if (!isContentItem(item)) {
           return (
-            <div key={index} className="text-sm text-gray-600">
+            <div key={index} className="text-sm text-muted-foreground">
               {String(item)}
             </div>
           );
@@ -51,9 +51,9 @@ export const ClaudeContentArrayRenderer = ({
               return (
                 <div
                   key={index}
-                  className="p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                  className="p-3 bg-card border border-border rounded-lg"
                 >
-                  <div className="whitespace-pre-wrap text-gray-800">
+                  <div className="whitespace-pre-wrap text-foreground">
                     {item.text}
                   </div>
                 </div>

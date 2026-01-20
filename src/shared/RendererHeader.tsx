@@ -2,8 +2,7 @@ import { ChevronRight, X } from "lucide-react";
 import { useToggle } from "../hooks";
 import { createContext, useContext } from "react";
 import { useTranslation } from "react-i18next";
-import { cn } from "../utils/cn";
-import { COLORS } from "../constants/colors";
+import { cn } from "@/lib/utils";
 
 const ContentContext = createContext<{
   isOpen: boolean;
@@ -54,10 +53,9 @@ const RendererWrapper = ({
     <ContentProvider hasError={hasError} enableToggle={enableToggle}>
       <div
         className={cn(
-          "mt-2 border rounded-lg overflow-hidden",
+          "mt-2 border border-border rounded-lg overflow-hidden",
           className,
-          hasError &&
-            `${COLORS.semantic.error.bg} ${COLORS.semantic.error.border}`
+          hasError && "bg-destructive/10 border-destructive/50"
         )}
       >
         {children}
@@ -87,7 +85,7 @@ const RendererHeader = ({
       <div className={cn("flex items-center justify-between px-3 py-2")}>
         <div className="flex items-center gap-2">
           {hasError ? (
-            <X className={`w-4 h-4 shrink-0 ${COLORS.semantic.error.icon}`} />
+            <X className="w-4 h-4 shrink-0 text-destructive" />
           ) : (
             icon
           )}
@@ -95,7 +93,7 @@ const RendererHeader = ({
             className={cn(
               "text-xs font-medium",
               titleClassName,
-              hasError && COLORS.semantic.error.textDark
+              hasError && "text-destructive"
             )}
           >
             {`${title} ${hasError ? t("errorOccurred") : ""}`}
@@ -111,19 +109,18 @@ const RendererHeader = ({
       onClick={toggle}
       className={cn(
         "w-full flex items-center justify-between px-3 py-2 text-left",
-        "hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        "hover:bg-accent transition-colors"
       )}
     >
       <div className="flex items-center gap-2">
         <ChevronRight
           className={cn(
-            "w-4 h-4 shrink-0 transition-transform duration-200",
-            COLORS.ui.text.muted,
+            "w-4 h-4 shrink-0 transition-transform duration-200 text-muted-foreground",
             isOpen && "rotate-90"
           )}
         />
         {hasError ? (
-          <X className={`w-4 h-4 shrink-0 ${COLORS.semantic.error.icon}`} />
+          <X className="w-4 h-4 shrink-0 text-destructive" />
         ) : (
           icon
         )}
@@ -131,7 +128,7 @@ const RendererHeader = ({
           className={cn(
             "text-xs font-medium",
             titleClassName,
-            hasError && COLORS.semantic.error.textDark
+            hasError && "text-destructive"
           )}
         >
           {`${title} ${hasError ? t("errorOccurred") : ""}`}

@@ -22,7 +22,7 @@ import { CommandOutputDisplay } from "./CommandOutputDisplay";
 import { formatClaudeErrorOutput } from "../../utils/messageUtils";
 import { Renderer } from "../../shared/RendererHeader";
 import { COLORS } from "../../constants/colors";
-import { cn } from "../../utils/cn";
+import { cn } from "@/lib/utils";
 
 interface ToolExecutionResultRouterProps {
   toolResult: Record<string, unknown> | string;

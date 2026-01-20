@@ -15,7 +15,7 @@ import {
 import type { SessionTokenStats } from "../types";
 import { formatTime } from "../utils/time";
 import { COLORS } from "../constants/colors";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 
 interface TokenStatsViewerProps {
   sessionStats?: SessionTokenStats | null;

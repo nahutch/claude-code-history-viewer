@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { ToolExecutionResultRouter } from "./messageRenderer";
 import { ToolIcon } from "./ToolIcon";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 
 type Props = {
   toolUse?: Record<string, unknown>;
@@ -96,25 +96,25 @@ export const CollapsibleToolResult = ({
   const summary = getResultSummary(toolResult);
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg mt-2 overflow-hidden">
+    <div className="border border-border rounded-lg mt-2 overflow-hidden">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "w-full flex items-center gap-2 px-3 py-2 text-left",
-          "hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          "hover:bg-secondary transition-colors"
         )}
       >
         <ChevronRight
           className={cn(
-            "w-4 h-4 shrink-0 transition-transform duration-200 text-gray-400 dark:text-gray-500",
+            "w-4 h-4 shrink-0 transition-transform duration-200 text-muted-foreground",
             isExpanded && "rotate-90"
           )}
         />
-        <ToolIcon toolName={toolName} className="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{toolName}</span>
+        <ToolIcon toolName={toolName} className="w-4 h-4 shrink-0 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground">{toolName}</span>
         {!isExpanded && summary && (
-          <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
+          <span className="text-xs text-muted-foreground truncate">
             {summary}
           </span>
         )}
