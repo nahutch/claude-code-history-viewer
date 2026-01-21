@@ -356,27 +356,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
         )}
       </OverlayScrollbarsComponent>
 
-      {/* Sidebar Footer */}
-      <div className="relative px-4 py-3 border-t border-accent/20 bg-gradient-to-r from-accent/5 via-accent/10 to-accent/5">
-        {/* Top accent line */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
-
-        <div className="flex items-center justify-between text-2xs">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent/60" />
-            <span className="tabular-nums font-mono text-accent/80">
-              {t("components:project.count", "{{count}} projects", {
-                count: projects.length,
-              })}
-            </span>
-          </div>
-          <span className="tabular-nums font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-            {t("components:session.count", "{{count}} sessions", {
-              count: sessions.length,
-            })}
-          </span>
-        </div>
-      </div>
       </div>
 
       {/* Resize Handle - Outside scroll area */}
