@@ -21,8 +21,8 @@ import { FileContent } from "../FileContent";
 import { CommandOutputDisplay } from "./CommandOutputDisplay";
 import { formatClaudeErrorOutput } from "../../utils/messageUtils";
 import { Renderer } from "../../shared/RendererHeader";
-import { COLORS } from "../../constants/colors";
 import { cn } from "@/lib/utils";
+import { layout } from "@/components/renderers";
 
 interface ToolExecutionResultRouterProps {
   toolResult: Record<string, unknown> | string;
@@ -182,6 +182,16 @@ export const ToolExecutionResultRouter: React.FC<
     return <FileListRenderer toolResult={toolResult} />;
   }
 
+  // Async agent task results are handled by MessageViewer's grouping logic
+  // Return null here - ClaudeMessageNode handles rendering via agentTaskGroup prop
+  // This includes both launch messages (isAsync: true) and completion messages (status: "completed")
+  if (toolResult.agentId && typeof toolResult.agentId === "string") {
+    // Launch message (isAsync: true) or completion message (status: "completed")
+    if (toolResult.isAsync === true || toolResult.status === "completed") {
+      return null;
+    }
+  }
+
   // Handle file object parsing
   if (toolResult.file && typeof toolResult.file === "object") {
     const fileData = toolResult.file as Record<string, unknown>;
@@ -267,32 +277,25 @@ export const ToolExecutionResultRouter: React.FC<
 
   return (
     <Renderer
-      className={cn(COLORS.semantic.success.bg, COLORS.semantic.success.border)}
+      className="bg-success/10 border-success/30"
       hasError={hasError as boolean}
     >
       <Renderer.Header
         title={t("toolResult.toolExecutionResult")}
-        titleClassName={cn(COLORS.semantic.success.text)}
-        icon={<Check className={cn("w-4 h-4", COLORS.semantic.success.icon)} />}
+        titleClassName="text-success"
+        icon={<Check className="w-4 h-4 text-success" />}
       />
       <Renderer.Content>
         {/* 메타데이터 정보 */}
         {hasMetadata && (
-          <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+          <div className={`grid grid-cols-2 gap-2 mb-3 ${layout.smallText}`}>
             {interrupted !== null && (
-              <div
-                className={cn(
-                  COLORS.ui.background.primary,
-                  COLORS.ui.border.medium
-                )}
-              >
-                <div className={cn(COLORS.ui.text.muted)}>{t("toolResult.executionStatus")}</div>
+              <div className="p-2 rounded border bg-card border-border">
+                <div className="text-muted-foreground">{t("toolResult.executionStatus")}</div>
                 <div
                   className={cn(
                     "font-medium",
-                    interrupted
-                      ? COLORS.semantic.warning.text
-                      : COLORS.semantic.success.text
+                    interrupted ? "text-warning" : "text-success"
                   )}
                 >
                   {interrupted ? t("toolResult.interrupted") : t("toolResult.completed")}
@@ -300,17 +303,12 @@ export const ToolExecutionResultRouter: React.FC<
               </div>
             )}
             {isImage !== null && (
-              <div
-                className={cn(
-                  COLORS.ui.background.primary,
-                  COLORS.ui.border.medium
-                )}
-              >
-                <div className={cn(COLORS.ui.text.muted)}>{t("toolResult.imageResult")}</div>
+              <div className="p-2 rounded border bg-card border-border">
+                <div className="text-muted-foreground">{t("toolResult.imageResult")}</div>
                 <div
                   className={cn(
                     "font-medium",
-                    isImage ? COLORS.semantic.info.text : COLORS.ui.text.muted
+                    isImage ? "text-info" : "text-muted-foreground"
                   )}
                 >
                   {isImage ? t("toolResult.included") : t("toolResult.none")}
@@ -322,36 +320,24 @@ export const ToolExecutionResultRouter: React.FC<
 
         {stdout.length > 0 && (
           <div className="mb-2">
-            <div className={cn(COLORS.ui.text.muted)}>{t("toolResult.output")}:</div>
+            <div className="text-muted-foreground">{t("toolResult.output")}:</div>
             <CommandOutputDisplay stdout={stdout} />
           </div>
         )}
 
         {stderr.length > 0 && (
           <div className="mb-2">
-            <div className={cn(COLORS.semantic.error.text)}>{t("toolResult.error")}:</div>
-            <pre
-              className={cn(
-                "text-sm whitespace-pre-wrap bg-white p-2 rounded border max-h-96 overflow-y-auto",
-                COLORS.semantic.error.bg,
-                COLORS.semantic.error.border
-              )}
-            >
+            <div className="text-destructive">{t("toolResult.error")}:</div>
+            <pre className={`${layout.bodyText} whitespace-pre-wrap bg-destructive/5 p-2 rounded border border-destructive/30 max-h-96 overflow-y-auto text-destructive`}>
               {formatClaudeErrorOutput(stderr)}
             </pre>
           </div>
         )}
 
         {filePath.length > 0 && (
-          <div className={cn(COLORS.ui.text.muted)}>
+          <div className="text-muted-foreground">
             {t("toolResult.file")}:{" "}
-            <code
-              className={cn(
-                "px-1 rounded",
-                COLORS.ui.background.secondary,
-                COLORS.ui.text.secondary
-              )}
-            >
+            <code className="px-1 rounded bg-secondary text-foreground/80">
               {filePath}
             </code>
           </div>
@@ -359,12 +345,12 @@ export const ToolExecutionResultRouter: React.FC<
 
         {/* 출력이 없을 때 상태 표시 */}
         {!hasOutput && hasMetadata && (
-          <div className={cn(COLORS.ui.text.muted)}>{t("toolResult.noOutput")}</div>
+          <div className="text-muted-foreground">{t("toolResult.noOutput")}</div>
         )}
 
         {/* 완전히 빈 결과일 때 */}
         {!hasOutput && !hasMetadata && (
-          <div className={cn(COLORS.ui.text.muted)}>{t("toolResult.executionComplete")}</div>
+          <div className="text-muted-foreground">{t("toolResult.executionComplete")}</div>
         )}
       </Renderer.Content>
     </Renderer>

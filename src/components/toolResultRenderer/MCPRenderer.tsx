@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Renderer } from "../../shared/RendererHeader";
 import { cn } from "@/lib/utils";
-import { COLORS } from "../../constants/colors";
+import { layout } from "@/components/renderers";
 
 type Props = {
   mcpData: Record<string, unknown>;
@@ -23,18 +23,13 @@ export const MCPRenderer = ({ mcpData }: Props) => {
   const [showResult, setShowResult] = useState(false);
 
   return (
-    <Renderer
-      className={cn(
-        "bg-purple-50 dark:bg-purple-900/20",
-        "border-purple-200 dark:border-purple-800"
-      )}
-    >
+    <Renderer className="bg-tool-mcp/10 border-tool-mcp/30">
       <Renderer.Header
         title={t('mcpRenderer.mcpToolCall')}
-        icon={<Globe className={cn("w-4 h-4", COLORS.tools.search.icon)} />}
-        titleClassName={COLORS.tools.search.text}
+        icon={<Globe className={cn(layout.iconSize, "text-tool-mcp")} />}
+        titleClassName="text-foreground"
         rightContent={
-          <div className={cn("text-xs", COLORS.tools.search.text)}>
+          <div className={`${layout.smallText} text-tool-mcp`}>
             {String(server)}.{String(method)}
           </div>
         }
@@ -46,20 +41,13 @@ export const MCPRenderer = ({ mcpData }: Props) => {
             <button
               type="button"
               onClick={() => setShowParams(!showParams)}
-              className={cn(
-                "flex items-center space-x-1 text-sm font-medium cursor-pointer",
-                COLORS.tools.search.text
-              )}
+              className={cn("flex items-center font-medium cursor-pointer text-tool-mcp", layout.iconSpacing, layout.bodyText)}
             >
-              <ChevronRight className={cn("w-3 h-3 transition-transform", showParams && "rotate-90")} />
+              <ChevronRight className={cn(layout.iconSizeSmall, "transition-transform", showParams && "rotate-90")} />
               <span>{t('mcpRenderer.parameters')}</span>
             </button>
             {showParams && (
-              <pre className={cn(
-                "mt-1 p-2 rounded text-xs overflow-auto",
-                "bg-purple-100 dark:bg-purple-900/40",
-                COLORS.ui.text.primary
-              )}>
+              <pre className={`mt-1 p-2 rounded ${layout.monoText} overflow-auto bg-tool-mcp/20 text-foreground`}>
                 {JSON.stringify(params, null, 2)}
               </pre>
             )}
@@ -67,15 +55,11 @@ export const MCPRenderer = ({ mcpData }: Props) => {
 
           {/* 결과 */}
           {error ? (
-            <div className={cn(
-              "p-2 rounded border",
-              "bg-red-100 dark:bg-red-900/30",
-              "border-red-200 dark:border-red-800"
-            )}>
-              <div className={cn("text-xs font-medium mb-1", COLORS.semantic.error.text)}>
+            <div className="p-2 rounded border bg-destructive/10 border-destructive/30">
+              <div className={`${layout.smallText} font-medium mb-1 text-destructive`}>
                 {t('mcpRenderer.error')}
               </div>
-              <div className={cn("text-sm", COLORS.semantic.error.text)}>
+              <div className={`${layout.bodyText} text-destructive`}>
                 {String(error)}
               </div>
             </div>
@@ -84,20 +68,13 @@ export const MCPRenderer = ({ mcpData }: Props) => {
               <button
                 type="button"
                 onClick={() => setShowResult(!showResult)}
-                className={cn(
-                  "flex items-center space-x-1 text-sm font-medium cursor-pointer",
-                  COLORS.tools.search.text
-                )}
+                className={cn("flex items-center font-medium cursor-pointer text-tool-mcp", layout.iconSpacing, layout.bodyText)}
               >
-                <ChevronRight className={cn("w-3 h-3 transition-transform", showResult && "rotate-90")} />
+                <ChevronRight className={cn(layout.iconSizeSmall, "transition-transform", showResult && "rotate-90")} />
                 <span>{t('mcpRenderer.executionResult')}</span>
               </button>
               {showResult && (
-                <pre className={cn(
-                  "mt-1 p-2 rounded text-xs overflow-auto",
-                  "bg-gray-100 dark:bg-gray-800",
-                  COLORS.ui.text.primary
-                )}>
+                <pre className={`mt-1 p-2 rounded ${layout.monoText} overflow-auto bg-muted text-foreground`}>
                   {JSON.stringify(result, null, 2)}
                 </pre>
               )}

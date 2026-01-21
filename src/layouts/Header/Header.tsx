@@ -58,23 +58,28 @@ export const Header = () => {
   };
 
   return (
-    <header className="relative h-16 flex items-center justify-between px-6 border-b border-border bg-sidebar">
+    <header className="relative h-14 flex items-center justify-between px-5 border-b-0 bg-gradient-to-r from-sidebar via-sidebar to-card">
+      {/* Bottom accent line */}
+      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-accent/60 via-accent to-accent/60" />
+
       {/* Left: Logo & Title */}
-      <div className="flex items-center gap-4">
-        {/* Logo with glow effect */}
+      <div className="relative flex items-center gap-3">
+        {/* Logo with ring */}
         <div className="relative">
-          <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full" />
-          <img
-            src="/app-icon.png"
-            alt="Claude Code History"
-            className="relative w-9 h-9 rounded-lg"
-          />
+          <div className="absolute -inset-1 bg-accent/20 rounded-xl blur-md" />
+          <div className="relative p-1.5 bg-gradient-to-br from-accent/20 to-accent/5 rounded-xl ring-1 ring-accent/30">
+            <img
+              src="/app-icon.png"
+              alt="Claude Code History"
+              className="w-7 h-7 rounded-lg"
+            />
+          </div>
         </div>
 
         {/* Title Group */}
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold tracking-tight text-foreground">
+            <h1 className="text-sm font-bold tracking-tight text-foreground">
               {t("appName")}
             </h1>
             {selectedProject && (
@@ -233,15 +238,16 @@ const NavButton = ({
         "relative p-2 rounded-lg transition-all duration-200",
         "text-muted-foreground",
         isActive
-          ? "bg-accent/15 text-accent"
-          : "hover:bg-secondary hover:text-foreground",
-        disabled && "opacity-50 cursor-not-allowed"
+          ? "bg-accent/15 text-accent shadow-sm shadow-accent/20"
+          : "hover:bg-secondary/80 hover:text-foreground hover:shadow-sm",
+        disabled && "opacity-50 cursor-not-allowed",
+        "active:scale-95"
       )}
       content={label}
     >
-      <Icon className={cn("w-4 h-4", isLoading && "animate-spin")} />
+      <Icon className={cn("w-4 h-4 transition-transform", isLoading && "animate-spin")} />
       {isActive && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent shadow-glow animate-subtle-pulse" />
       )}
     </TooltipButton>
   );

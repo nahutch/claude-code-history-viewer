@@ -1,6 +1,19 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
+import { GithubIcon, MailIcon, InfoIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface FeedbackData {
   subject: string;
@@ -49,17 +62,14 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 입력값 검증 강화
     const trimmedSubject = subject.trim();
     const trimmedBody = body.trim();
 
     if (!trimmedSubject || !trimmedBody) {
-      // 토스트 메시지로 알림
       return;
     }
 
     if (trimmedSubject.length > 100 || trimmedBody.length > 1000) {
-      // 길이 제한 초과 알림
       return;
     }
 
@@ -74,7 +84,6 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
 
       await invoke("send_feedback", { feedback: feedbackData });
 
-      // 성공 후 초기화
       setSubject("");
       setBody("");
       onClose();
@@ -95,111 +104,112 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {t("feedback.title")}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("feedback.title")}</DialogTitle>
+          <DialogDescription>
+            {t("feedback.description", "Share your feedback to help us improve")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Feedback Type */}
+          <div className="space-y-2">
+            <Label htmlFor="feedbackType">{t("feedback.type")}</Label>
+            <select
+              id="feedbackType"
+              value={feedbackType}
+              onChange={(e) => setFeedbackType(e.target.value)}
+              className={cn(
+                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                "transition-colors focus-visible:outline-none focus-visible:ring-2",
+                "focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              )}
             >
-              {t("feedback.close")}
-            </button>
+              {feedbackTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* 피드백 타입 선택 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("feedback.type")}
-              </label>
-              <select
-                value={feedbackType}
-                onChange={(e) => setFeedbackType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                {feedbackTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Subject */}
+          <div className="space-y-2">
+            <Label htmlFor="subject">{t("feedback.subjectRequired")}</Label>
+            <Input
+              id="subject"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={t("feedback.subjectPlaceholder")}
+              required
+            />
+          </div>
 
-            {/* 제목 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("feedback.subjectRequired")}
-              </label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder={t("feedback.subjectPlaceholder")}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                required
-              />
-            </div>
-
-            {/* 내용 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("feedback.contentRequired")}
-              </label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder={
-                  feedbackType === "bug"
-                    ? t("feedback.placeholders.bug")
-                    : feedbackType === "feature"
-                    ? t("feedback.placeholders.feature")
-                    : t("feedback.placeholders.default")
-                }
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-                required
-              />
-            </div>
-
-            {/* 시스템 정보 포함 옵션 */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="includeSystemInfo"
-                checked={includeSystemInfo}
-                onChange={(e) => setIncludeSystemInfo(e.target.checked)}
-                className="rounded"
-              />
-              <label
-                htmlFor="includeSystemInfo"
-                className="text-sm text-gray-700 dark:text-gray-300"
-              >
-                {t("feedback.includeSystemInfo")}
-              </label>
-              {includeSystemInfo && !systemInfo && (
-                <button
-                  type="button"
-                  onClick={loadSystemInfo}
-                  className="text-xs text-blue-600 hover:text-blue-800"
-                >
-                  {t("feedback.preview")}
-                </button>
+          {/* Content */}
+          <div className="space-y-2">
+            <Label htmlFor="body">{t("feedback.contentRequired")}</Label>
+            <textarea
+              id="body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={
+                feedbackType === "bug"
+                  ? t("feedback.placeholders.bug")
+                  : feedbackType === "feature"
+                  ? t("feedback.placeholders.feature")
+                  : t("feedback.placeholders.default")
+              }
+              rows={6}
+              className={cn(
+                "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                "transition-colors placeholder:text-muted-foreground resize-none",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               )}
-            </div>
+              required
+            />
+          </div>
 
-            {/* 시스템 정보 미리보기 */}
-            {includeSystemInfo && systemInfo && (
-              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded text-xs">
-                <div className="font-medium mb-1">
-                  {t("feedback.systemInfoPreview")}
-                </div>
+          {/* Include System Info */}
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="includeSystemInfo"
+              checked={includeSystemInfo}
+              onChange={(e) => setIncludeSystemInfo(e.target.checked)}
+              className={cn(
+                "h-4 w-4 rounded border-input text-primary",
+                "focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              )}
+            />
+            <Label htmlFor="includeSystemInfo" className="cursor-pointer">
+              {t("feedback.includeSystemInfo")}
+            </Label>
+            {includeSystemInfo && !systemInfo && (
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                onClick={loadSystemInfo}
+                className="h-auto p-0"
+              >
+                {t("feedback.preview")}
+              </Button>
+            )}
+          </div>
+
+          {/* System Info Preview */}
+          {includeSystemInfo && systemInfo && (
+            <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm">
+              <div className="flex items-center gap-2 font-medium text-foreground mb-2">
+                <InfoIcon className="h-4 w-4" />
+                {t("feedback.systemInfoPreview")}
+              </div>
+              <div className="space-y-1 text-muted-foreground">
                 <div>
                   {t("feedback.appVersion", {
                     version: systemInfo.app_version,
@@ -215,41 +225,46 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
                   {t("feedback.architecture", { arch: systemInfo.arch })}
                 </div>
               </div>
-            )}
-
-            {/* 버튼들 */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <button
-                type="submit"
-                disabled={isSubmitting || !subject.trim() || !body.trim()}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                {isSubmitting
-                  ? t("feedback.sendingEmail")
-                  : t("feedback.sendEmail")}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenGitHub}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                {t("feedback.openGitHub")}
-              </button>
             </div>
-          </form>
+          )}
 
-          {/* 도움말 */}
-          <div className="mt-6 text-xs text-gray-500 dark:text-gray-400">
-            <div className="mb-2">{t("feedback.tips")}</div>
-            <ul className="list-disc list-inside space-y-1 ml-4">
-              <li>{t("feedback.tipBugReport")}</li>
-              <li>{t("feedback.tipFeatureRequest")}</li>
-              <li>{t("feedback.tipScreenshot")}</li>
-            </ul>
+          {/* Action Buttons */}
+          <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              type="submit"
+              disabled={isSubmitting || !subject.trim() || !body.trim()}
+              className="flex-1"
+            >
+              <MailIcon className="h-4 w-4" />
+              {isSubmitting
+                ? t("feedback.sendingEmail")
+                : t("feedback.sendEmail")}
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleOpenGitHub}
+              className="flex-1"
+            >
+              <GithubIcon className="h-4 w-4" />
+              {t("feedback.openGitHub")}
+            </Button>
+          </DialogFooter>
+        </form>
+
+        {/* Help Tips */}
+        <div className="mt-2 rounded-lg border border-border bg-card p-4 text-sm">
+          <div className="font-medium text-foreground mb-2">
+            {t("feedback.tips")}
           </div>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+            <li>{t("feedback.tipBugReport")}</li>
+            <li>{t("feedback.tipFeatureRequest")}</li>
+            <li>{t("feedback.tipScreenshot")}</li>
+          </ul>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

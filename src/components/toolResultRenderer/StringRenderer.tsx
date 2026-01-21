@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Renderer } from "../../shared/RendererHeader";
+import { layout } from "@/components/renderers";
 import { cn } from "@/lib/utils";
-import { COLORS } from "../../constants/colors";
 
 type Props = {
   result: string;
@@ -31,26 +31,22 @@ export const StringRenderer = ({ result }: Props) => {
       : result;
 
   return (
-    <Renderer className={cn(COLORS.tools.file.bg, COLORS.tools.file.border)}>
+    <Renderer className="bg-tool-file/10 border-tool-file/30">
       <Renderer.Header
         title={isFileTree ? t("toolResult.fileStructure") : t("toolResult.toolExecutionResult")}
         icon={
           isFileTree ? (
-            <Folder className={cn(COLORS.tools.file.icon)} />
+            <Folder className={cn(layout.iconSize, "text-tool-file")} />
           ) : (
-            <Check className={cn(COLORS.tools.file.icon)} />
+            <Check className={cn(layout.iconSize, "text-tool-file")} />
           )
         }
-        titleClassName={COLORS.tools.file.text}
+        titleClassName="text-tool-file"
         rightContent={
           shouldCollapse && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className={cn(
-                "text-xs px-2 py-1 rounded transition-colors",
-                COLORS.ui.background.secondary,
-                COLORS.ui.text.primary
-              )}
+              className={`${layout.smallText} px-2 py-1 rounded transition-colors bg-secondary text-foreground hover:bg-secondary/80`}
             >
               {isExpanded ? (
                 <>
@@ -66,34 +62,23 @@ export const StringRenderer = ({ result }: Props) => {
         }
       />
       <Renderer.Content>
-        <div
-          className={cn(COLORS.ui.background.primary, COLORS.ui.border.medium)}
-        >
+        <div className="bg-card border-border">
           {isFileTree ? (
-            <div className={cn(COLORS.ui.text.primary)}>{displayResult}</div>
+            <div className={`text-foreground ${layout.monoText}`}>{displayResult}</div>
           ) : (
-            <div className="p-3 prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-code:text-red-600 prose-code:bg-gray-100 prose-pre:bg-gray-900 prose-pre:text-gray-100">
+            <div className={`p-3 ${layout.prose}`}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {displayResult}
               </ReactMarkdown>
             </div>
           )}
           {shouldCollapse && !isExpanded && (
-            <div
-              className={cn(
-                COLORS.ui.background.primary,
-                COLORS.ui.border.medium
-              )}
-            >
+            <div className="bg-card border-t border-border pt-2">
               <button
                 onClick={() => setIsExpanded(true)}
-                className={cn(
-                  "text-xs",
-                  COLORS.ui.text.primary,
-                  COLORS.ui.interactive.hover
-                )}
+                className={cn(layout.smallText, "text-foreground hover:text-accent transition-colors")}
               >
-                <FileText className="w-3 h-3 inline mr-1" />
+                <FileText className={cn(layout.iconSizeSmall, "inline mr-1")} />
                 {resultLines.length - MAX_LINES}{t("toolResult.lines")} {t("toolResult.showMore")}
               </button>
             </div>

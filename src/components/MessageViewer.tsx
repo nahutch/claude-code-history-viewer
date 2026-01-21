@@ -8,18 +8,20 @@ import React, {
 } from "react";
 import { Loader2, MessageCircle, ChevronDown, ChevronUp, Search, X, HelpCircle, ChevronRight, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ClaudeMessage, ClaudeSession } from "../types";
+import type { ClaudeMessage, ClaudeSession, ProgressData } from "../types";
 import type { SearchState, SearchFilterType } from "../store/useAppStore";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
 import {
   ClaudeToolUseDisplay,
   MessageContentDisplay,
   ToolExecutionResultRouter,
+  ProgressRenderer,
+  AgentProgressGroupRenderer,
 } from "./messageRenderer";
+import { AgentTaskGroupRenderer, type AgentTask } from "./toolResultRenderer";
 import { getToolName } from "./CollapsibleToolResult";
 import { extractClaudeMessageContent } from "../utils/messageUtils";
 import { cn } from "@/lib/utils";
-import { COLORS } from "../constants/colors";
 import { formatTime, formatTimeShort } from "../utils/time";
 import { getShortModelName } from "../utils/model";
 
@@ -47,6 +49,12 @@ interface MessageNodeProps {
   searchQuery?: string;
   filterType?: SearchFilterType;
   currentMatchIndex?: number; // 메시지 내에서 현재 활성화된 매치 인덱스
+  // Agent task grouping
+  agentTaskGroup?: AgentTask[];
+  isAgentTaskGroupMember?: boolean; // true if part of a group but not the leader
+  // Agent progress grouping
+  agentProgressGroup?: { entries: AgentProgressEntry[]; agentId: string };
+  isAgentProgressGroupMember?: boolean; // true if part of a progress group but not the leader
 }
 
 interface MessageHeaderProps {
@@ -60,6 +68,219 @@ const hasSystemCommandContent = (message: ClaudeMessage): boolean => {
   return /<command-name>[\s\S]*?<\/command-name>/.test(content) ||
          /<local-command-caveat>[\s\S]*?<\/local-command-caveat>/.test(content) ||
          /<command-message>[\s\S]*?<\/command-message>/.test(content);
+};
+
+// Helper to check if a message is an agent task launch (isAsync: true)
+const isAgentTaskLaunchMessage = (message: ClaudeMessage): boolean => {
+  if (!message.toolUseResult || typeof message.toolUseResult !== "object") return false;
+  const result = message.toolUseResult as Record<string, unknown>;
+  return result.isAsync === true && typeof result.agentId === "string";
+};
+
+// Helper to check if a message is an agent task completion (status: "completed" + agentId, no isAsync)
+const isAgentTaskCompletionMessage = (message: ClaudeMessage): boolean => {
+  if (!message.toolUseResult || typeof message.toolUseResult !== "object") return false;
+  const result = message.toolUseResult as Record<string, unknown>;
+  return result.isAsync === undefined &&
+         result.status === "completed" &&
+         typeof result.agentId === "string";
+};
+
+// Helper to check if a message is an agent task launch (used by extractAgentTask)
+const isAgentTaskMessage = (message: ClaudeMessage): boolean => {
+  return isAgentTaskLaunchMessage(message);
+};
+
+// Helper to extract agent task info from a message
+const extractAgentTask = (message: ClaudeMessage): AgentTask | null => {
+  if (!isAgentTaskMessage(message)) return null;
+  const result = message.toolUseResult as Record<string, unknown>;
+  return {
+    agentId: String(result.agentId),
+    description: String(result.description || ""),
+    status: (result.status === "completed" ? "completed" :
+             result.status === "error" ? "error" : "async_launched") as AgentTask["status"],
+    outputFile: result.outputFile ? String(result.outputFile) : undefined,
+    prompt: result.prompt ? String(result.prompt) : undefined,
+  };
+};
+
+// Group agent task messages by timestamp (within 2 seconds) - non-consecutive grouping
+// Also includes completion messages linked by agentId
+const groupAgentTasks = (
+  messages: ClaudeMessage[]
+): Map<string, { tasks: AgentTask[]; messageUuids: Set<string> }> => {
+  const groups = new Map<string, { tasks: AgentTask[]; messageUuids: Set<string> }>();
+
+  // First, extract all agent task LAUNCH messages with their timestamps
+  const agentTaskMessages: { msg: ClaudeMessage; task: AgentTask; timestamp: number }[] = [];
+  for (const msg of messages) {
+    const task = extractAgentTask(msg);
+    if (task) {
+      agentTaskMessages.push({
+        msg,
+        task,
+        timestamp: new Date(msg.timestamp).getTime(),
+      });
+    }
+  }
+
+  // Sort by timestamp to ensure proper grouping
+  agentTaskMessages.sort((a, b) => a.timestamp - b.timestamp);
+
+  // Group by timestamp proximity (within 2 seconds)
+  let currentGroup: { leaderId: string; tasks: AgentTask[]; messageUuids: Set<string>; timestamp: number } | null = null;
+
+  // Map to track agentId -> group for completion message linking
+  const agentIdToGroup = new Map<string, { tasks: AgentTask[]; messageUuids: Set<string> }>();
+
+  for (const { msg, task, timestamp } of agentTaskMessages) {
+    // Check if this task belongs to the current group (within 2 seconds)
+    if (currentGroup && Math.abs(timestamp - currentGroup.timestamp) <= 2000) {
+      currentGroup.tasks.push(task);
+      currentGroup.messageUuids.add(msg.uuid);
+      agentIdToGroup.set(task.agentId, groups.get(currentGroup.leaderId)!);
+    } else {
+      // Start a new group
+      currentGroup = {
+        leaderId: msg.uuid,
+        tasks: [task],
+        messageUuids: new Set([msg.uuid]),
+        timestamp,
+      };
+      const groupData = {
+        tasks: currentGroup.tasks,
+        messageUuids: currentGroup.messageUuids,
+      };
+      groups.set(currentGroup.leaderId, groupData);
+      agentIdToGroup.set(task.agentId, groupData);
+    }
+  }
+
+  // Now find completion messages and link them to groups by agentId
+  for (const msg of messages) {
+    if (isAgentTaskCompletionMessage(msg)) {
+      const result = msg.toolUseResult as Record<string, unknown>;
+      const agentId = String(result.agentId);
+      const group = agentIdToGroup.get(agentId);
+
+      if (group) {
+        group.messageUuids.add(msg.uuid);
+        const task = group.tasks.find(t => t.agentId === agentId);
+        if (task) {
+          task.status = "completed";
+        }
+      }
+    }
+
+    // Handle queue-operation messages with <task-notification> tags
+    if (msg.type === "queue-operation") {
+      const content = extractClaudeMessageContent(msg);
+      if (content && typeof content === "string" && content.includes("<task-notification>")) {
+        // Extract task-id from content
+        const taskIdMatch = content.match(/<task-id>([^<]+)<\/task-id>/);
+        const taskId = taskIdMatch?.[1];
+        if (taskId) {
+          const group = agentIdToGroup.get(taskId);
+
+          if (group) {
+            group.messageUuids.add(msg.uuid);
+            const task = group.tasks.find(t => t.agentId === taskId);
+            if (task) {
+              task.status = "completed";
+            }
+          }
+        }
+      }
+    }
+
+    // Handle user messages with <task-notification> tags (batched notifications)
+    if (msg.type === "user") {
+      const content = extractClaudeMessageContent(msg);
+      if (content && typeof content === "string" && content.includes("<task-notification>")) {
+        // Extract ALL task-ids from content (may contain multiple)
+        const taskIdMatches = [...content.matchAll(/<task-id>([^<]+)<\/task-id>/g)];
+
+        for (const match of taskIdMatches) {
+          const taskId = match[1];
+          if (taskId) {
+            const group = agentIdToGroup.get(taskId);
+
+            if (group) {
+              group.messageUuids.add(msg.uuid);
+              const task = group.tasks.find(t => t.agentId === taskId);
+              if (task) {
+                task.status = "completed";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return groups;
+};
+
+// Interface for agent progress entries
+interface AgentProgressEntry {
+  data: ProgressData;
+  timestamp: string;
+  uuid: string;
+}
+
+// Helper to check if a message is an agent progress message
+const isAgentProgressMessage = (message: ClaudeMessage): boolean => {
+  if (message.type !== "progress") return false;
+  const data = message.data as ProgressData | undefined;
+  return data?.type === "agent_progress" && typeof data?.agentId === "string";
+};
+
+// Extract agentId from a progress message
+const getAgentIdFromProgress = (message: ClaudeMessage): string | null => {
+  if (!isAgentProgressMessage(message)) return null;
+  const data = message.data as ProgressData;
+  return data.agentId || null;
+};
+
+// Group consecutive agent progress messages by agentId
+const groupAgentProgressMessages = (
+  messages: ClaudeMessage[]
+): Map<string, { entries: AgentProgressEntry[]; messageUuids: Set<string> }> => {
+  const groups = new Map<string, { entries: AgentProgressEntry[]; messageUuids: Set<string> }>();
+  const agentGroupMap = new Map<string, { leaderId: string; entries: AgentProgressEntry[]; messageUuids: Set<string> }>();
+
+  for (const msg of messages) {
+    const agentId = getAgentIdFromProgress(msg);
+    if (!agentId) continue;
+
+    const entry: AgentProgressEntry = {
+      data: msg.data as ProgressData,
+      timestamp: msg.timestamp,
+      uuid: msg.uuid,
+    };
+
+    // Check if we have an existing group for this agentId
+    const existingGroup = agentGroupMap.get(agentId);
+    if (existingGroup) {
+      existingGroup.entries.push(entry);
+      existingGroup.messageUuids.add(msg.uuid);
+    } else {
+      // Start a new group for this agentId
+      const newGroup = {
+        leaderId: msg.uuid,
+        entries: [entry],
+        messageUuids: new Set([msg.uuid]),
+      };
+      agentGroupMap.set(agentId, newGroup);
+      groups.set(msg.uuid, {
+        entries: newGroup.entries,
+        messageUuids: newGroup.messageUuids,
+      });
+    }
+  }
+
+  return groups;
 };
 
 const MessageHeader = ({ message }: MessageHeaderProps) => {
@@ -91,19 +312,23 @@ const MessageHeader = ({ message }: MessageHeaderProps) => {
         <span>·</span>
         <span>{formatTimeShort(message.timestamp)}</span>
         {message.isSidechain && (
-          <span className="px-1.5 py-0.5 text-[10px] bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
+          <span className="px-1.5 py-0.5 text-xs font-mono bg-warning/20 text-warning-foreground rounded-full">
             {t("messageViewer.branch")}
           </span>
         )}
       </div>
 
       {message.type === "assistant" && message.model && (
-        <div className="relative group flex items-center gap-1">
+        <div className="relative group flex items-center gap-1.5">
           <span className="text-muted-foreground">{getShortModelName(message.model)}</span>
           {message.usage && (
             <>
               <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground" />
-              <div className="absolute bottom-full mb-2 right-0 w-52 bg-popover text-popover-foreground text-xs rounded-lg p-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10 border border-border">
+              <div className={cn(
+                "absolute bottom-full mb-2 right-0 w-52 bg-popover text-popover-foreground",
+                "text-xs rounded-md p-2.5",
+                "opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10 border border-border"
+              )}>
                 <p className="mb-1"><strong>{t("assistantMessageDetails.model")}:</strong> {message.model}</p>
                 <p className="mb-1"><strong>{t("messageViewer.time")}:</strong> {formatTime(message.timestamp)}</p>
                 {message.usage.input_tokens && <p>{t("assistantMessageDetails.input")}: {message.usage.input_tokens.toLocaleString()}</p>}
@@ -130,36 +355,31 @@ const SummaryMessage = ({ content, timestamp }: SummaryMessageProps) => {
   const { t } = useTranslation("components");
 
   return (
-    <div className={cn(
-      "rounded-lg border mx-4 my-2",
-      COLORS.semantic.info.bg,
-      COLORS.semantic.info.border
-    )}>
+    <div className="rounded-md border mx-4 my-2 bg-info/10 border-info/30">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "w-full flex items-center gap-2 px-3 py-2 text-left",
-          "hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors rounded-lg"
+          "w-full flex items-center gap-1.5 px-3 py-2 h-8",
+          "text-left hover:bg-info/20 transition-colors rounded-md"
         )}
       >
         <ChevronRight
           className={cn(
-            "w-4 h-4 transition-transform flex-shrink-0",
-            COLORS.semantic.info.icon,
+            "w-4 h-4 transition-transform flex-shrink-0 text-info",
             isExpanded && "rotate-90"
           )}
         />
-        <FileText className={cn("w-4 h-4 flex-shrink-0", COLORS.semantic.info.icon)} />
-        <span className={cn("text-xs font-medium", COLORS.semantic.info.text)}>
+        <FileText className="w-4 h-4 flex-shrink-0 text-info" />
+        <span className="text-sm font-medium text-info-foreground">
           {t("messageViewer.priorContext")}
         </span>
-        <span className={cn("text-xs ml-auto", COLORS.semantic.info.icon)}>
+        <span className="text-xs ml-auto text-info">
           {formatTimeShort(timestamp)}
         </span>
       </button>
 
       {isExpanded && (
-        <div className={cn("px-3 pb-3 text-sm", COLORS.semantic.info.text)}>
+        <div className="px-3 pb-3 text-sm text-info-foreground">
           {content}
         </div>
       )}
@@ -170,6 +390,9 @@ const SummaryMessage = ({ content, timestamp }: SummaryMessageProps) => {
 const isEmptyMessage = (message: ClaudeMessage): boolean => {
   // Messages with tool use or results should be shown
   if (message.toolUse || message.toolUseResult) return false;
+
+  // Progress messages should be shown
+  if (message.type === "progress" && message.data) return false;
 
   // Check for array content (tool results, etc.)
   if (message.content && Array.isArray(message.content) && message.content.length > 0) {
@@ -197,14 +420,49 @@ const isEmptyMessage = (message: ClaudeMessage): boolean => {
   return stripped.length === 0;
 };
 
-const ClaudeMessageNode = React.memo(({ message, isCurrentMatch, isMatch, searchQuery, filterType = "content", currentMatchIndex }: MessageNodeProps) => {
+const ClaudeMessageNode = React.memo(({ message, isCurrentMatch, isMatch, searchQuery, filterType = "content", currentMatchIndex, agentTaskGroup, isAgentTaskGroupMember, agentProgressGroup, isAgentProgressGroupMember }: MessageNodeProps) => {
   if (message.isSidechain) {
+    return null;
+  }
+
+  // Skip messages that are part of an agent task group (but not the leader)
+  if (isAgentTaskGroupMember) {
+    return null;
+  }
+
+  // Skip messages that are part of an agent progress group (but not the leader)
+  if (isAgentProgressGroupMember) {
     return null;
   }
 
   // Skip empty messages (no content, or only command tags)
   if (isEmptyMessage(message)) {
     return null;
+  }
+
+  // Render grouped agent tasks
+  if (agentTaskGroup && agentTaskGroup.length > 0) {
+    return (
+      <div data-message-uuid={message.uuid} className="w-full px-4 py-2">
+        <div className="max-w-4xl mx-auto">
+          <AgentTaskGroupRenderer tasks={agentTaskGroup} timestamp={message.timestamp} />
+        </div>
+      </div>
+    );
+  }
+
+  // Render grouped agent progress (replaces individual ProgressRenderer for agent_progress)
+  if (agentProgressGroup && agentProgressGroup.entries.length > 0) {
+    return (
+      <div data-message-uuid={message.uuid} className="w-full px-4 py-2">
+        <div className="max-w-4xl mx-auto">
+          <AgentProgressGroupRenderer
+            entries={agentProgressGroup.entries}
+            agentId={agentProgressGroup.agentId}
+          />
+        </div>
+      </div>
+    );
   }
 
   // Summary messages get special collapsible rendering
@@ -219,6 +477,21 @@ const ClaudeMessageNode = React.memo(({ message, isCurrentMatch, isMatch, search
     );
   }
 
+  // Progress messages get special rendering (non-agent progress types)
+  if (message.type === "progress" && message.data) {
+    return (
+      <div data-message-uuid={message.uuid} className="w-full px-4 py-1">
+        <div className="max-w-4xl mx-auto">
+          <ProgressRenderer
+            data={message.data as ProgressData}
+            toolUseID={message.toolUseID}
+            parentToolUseID={message.parentToolUseID}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       data-message-uuid={message.uuid}
@@ -226,9 +499,9 @@ const ClaudeMessageNode = React.memo(({ message, isCurrentMatch, isMatch, search
         "w-full px-4 py-2 transition-colors duration-300",
         message.isSidechain && "bg-muted",
         // 현재 매치된 메시지 강조
-        isCurrentMatch && "bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500",
+        isCurrentMatch && "bg-highlight-current ring-2 ring-warning",
         // 다른 매치 메시지 연한 강조
-        isMatch && !isCurrentMatch && "bg-yellow-50 dark:bg-yellow-900/10"
+        isMatch && !isCurrentMatch && "bg-highlight"
       )}
     >
       <div className="max-w-4xl mx-auto">
@@ -385,6 +658,16 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
     return { rootMessages: roots, uniqueMessages };
   }, [displayMessages]);
+
+  // Agent task grouping
+  const agentTaskGroups = useMemo(() => {
+    return groupAgentTasks(uniqueMessages);
+  }, [uniqueMessages]);
+
+  // Agent progress grouping (group agent_progress messages by agentId)
+  const agentProgressGroups = useMemo(() => {
+    return groupAgentProgressMessages(uniqueMessages);
+  }, [uniqueMessages]);
 
   // 이전 세션 ID를 추적
   const prevSessionIdRef = useRef<string | null>(null);
@@ -594,6 +877,26 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     const isCurrentMatch = currentMatchUuid === message.uuid;
     const messageMatchIndex = isCurrentMatch ? currentMatch?.matchIndex : undefined;
 
+    // Check if this message is part of an agent task group
+    const groupInfo = agentTaskGroups.get(message.uuid);
+    const isGroupLeader = !!groupInfo;
+    const isGroupMember = !isGroupLeader && Array.from(agentTaskGroups.values()).some(
+      g => g.messageUuids.has(message.uuid)
+    );
+
+
+    // Check if this message is part of an agent progress group
+    const progressGroupInfo = agentProgressGroups.get(message.uuid);
+    const isProgressGroupLeader = !!progressGroupInfo;
+    const isProgressGroupMember = !isProgressGroupLeader && Array.from(agentProgressGroups.values()).some(
+      g => g.messageUuids.has(message.uuid)
+    );
+
+    // Get agentId for progress group leader
+    const progressAgentId = isProgressGroupLeader
+      ? getAgentIdFromProgress(message)
+      : null;
+
     // 현재 메시지를 먼저 추가하고, 자식 메시지들을 이어서 추가
     const result: React.ReactNode[] = [
       <ClaudeMessageNode
@@ -605,6 +908,13 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         searchQuery={sessionSearch.query}
         filterType={sessionSearch.filterType}
         currentMatchIndex={messageMatchIndex}
+        agentTaskGroup={isGroupLeader ? groupInfo.tasks : undefined}
+        isAgentTaskGroupMember={isGroupMember}
+        agentProgressGroup={isProgressGroupLeader && progressAgentId ? {
+          entries: progressGroupInfo.entries,
+          agentId: progressAgentId,
+        } : undefined}
+        isAgentProgressGroupMember={isProgressGroupMember}
       />,
     ];
 
@@ -748,7 +1058,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       >
         {/* 디버깅 정보 */}
         {import.meta.env.DEV && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 text-xs text-yellow-800 dark:text-yellow-200 border-b space-y-1">
+          <div className="bg-warning/10 p-2 text-xs text-warning-foreground border-b border-warning/20 space-y-1">
             <div>
               {t("messageViewer.debugInfo.messages", {
                 current: displayMessages.length,
@@ -815,6 +1125,25 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                   const isCurrentMatch = currentMatchUuid === message.uuid;
                   const messageMatchIndex = isCurrentMatch ? currentMatch?.matchIndex : undefined;
 
+                  // Check if this message is part of an agent task group
+                  const groupInfo = agentTaskGroups.get(message.uuid);
+                  const isGroupLeader = !!groupInfo;
+                  const isGroupMember = !isGroupLeader && Array.from(agentTaskGroups.values()).some(
+                    g => g.messageUuids.has(message.uuid)
+                  );
+
+                  // Check if this message is part of an agent progress group
+                  const progressGroupInfo = agentProgressGroups.get(message.uuid);
+                  const isProgressGroupLeader = !!progressGroupInfo;
+                  const isProgressGroupMember = !isProgressGroupLeader && Array.from(agentProgressGroups.values()).some(
+                    g => g.messageUuids.has(message.uuid)
+                  );
+
+                  // Get agentId for progress group leader
+                  const progressAgentId = isProgressGroupLeader
+                    ? getAgentIdFromProgress(message)
+                    : null;
+
                   return (
                     <ClaudeMessageNode
                       key={uniqueKey}
@@ -825,6 +1154,13 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       searchQuery={sessionSearch.query}
                       filterType={sessionSearch.filterType}
                       currentMatchIndex={messageMatchIndex}
+                      agentTaskGroup={isGroupLeader ? groupInfo.tasks : undefined}
+                      isAgentTaskGroupMember={isGroupMember}
+                      agentProgressGroup={isProgressGroupLeader && progressAgentId ? {
+                        entries: progressGroupInfo.entries,
+                        agentId: progressAgentId,
+                      } : undefined}
+                      isAgentProgressGroupMember={isProgressGroupMember}
                     />
                   );
                 });
@@ -844,17 +1180,17 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                   key="error-fallback"
                   className="flex items-center justify-center p-8"
                 >
-                  <div className="text-center text-red-600">
+                  <div className="text-center text-destructive">
                     <div className="text-lg font-semibold mb-2">
                       {t("messageViewer.renderError")}
                     </div>
-                    <div className="text-sm">
+                    <div className="text-sm text-destructive/80">
                       {t("messageViewer.checkConsole")}
                     </div>
                     <button
                       type="button"
                       onClick={() => window.location.reload()}
-                      className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-colors"
                     >
                       {t("messageViewer.refresh")}
                     </button>
@@ -873,9 +1209,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
               onClick={scrollToTop}
               className={cn(
                 "p-3 rounded-full shadow-lg transition-all duration-300",
-                "bg-blue-500/50 hover:bg-blue-600 text-white",
-                "hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300",
-                "dark:bg-blue-600/50 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                "bg-accent/60 hover:bg-accent text-accent-foreground",
+                "hover:scale-110 focus:outline-none focus:ring-4 focus:ring-accent/30"
               )}
               title={t("messageViewer.scrollToTop")}
               aria-label={t("messageViewer.scrollToTop")}
@@ -889,9 +1224,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
               onClick={scrollToBottom}
               className={cn(
                 "p-3 rounded-full shadow-lg transition-all duration-300",
-                "bg-blue-500/50 hover:bg-blue-600 text-white",
-                "hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300",
-                "dark:bg-blue-600/50 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                "bg-accent/60 hover:bg-accent text-accent-foreground",
+                "hover:scale-110 focus:outline-none focus:ring-4 focus:ring-accent/30"
               )}
               title={t("messageViewer.scrollToBottom")}
               aria-label={t("messageViewer.scrollToBottom")}

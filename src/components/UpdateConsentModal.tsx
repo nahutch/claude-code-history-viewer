@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { useTranslation } from 'react-i18next';
 import { setUpdateSettings } from '@/utils/updateSettings';
+import { layout } from "@/components/renderers";
 
 interface UpdateIntroModalProps {
   isOpen: boolean;
@@ -39,13 +40,13 @@ export function UpdateIntroModal({ isOpen, onClose }: UpdateIntroModalProps) {
         </DialogHeader>
 
         <div className="space-y-4 py-4 dark:text-gray-300">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className={`${layout.bodyText} text-gray-600 dark:text-gray-400`}>
             {t('updateIntroModal.description')}
           </p>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-            <h4 className="font-medium text-sm mb-2 dark:text-gray-200">{t('updateIntroModal.howItWorksTitle')}</h4>
-            <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+            <h4 className={`font-medium ${layout.bodyText} mb-2 dark:text-gray-200`}>{t('updateIntroModal.howItWorksTitle')}</h4>
+            <ul className={`${layout.smallText} text-gray-600 dark:text-gray-400 space-y-1`}>
               <li>• {t('updateIntroModal.howItWorks1')}</li>
               <li>• {t('updateIntroModal.howItWorks2')}</li>
               <li>• {t('updateIntroModal.howItWorks3')}</li>
@@ -54,8 +55,8 @@ export function UpdateIntroModal({ isOpen, onClose }: UpdateIntroModalProps) {
           </div>
 
           <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-            <h4 className="font-medium text-sm mb-2 dark:text-gray-200">{t('updateIntroModal.benefitsTitle')}</h4>
-            <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+            <h4 className={`font-medium ${layout.bodyText} mb-2 dark:text-gray-200`}>{t('updateIntroModal.benefitsTitle')}</h4>
+            <ul className={`${layout.smallText} text-gray-600 dark:text-gray-400 space-y-1`}>
               <li>• {t('updateIntroModal.benefits1')}</li>
               <li>• {t('updateIntroModal.benefits2')}</li>
               <li>• {t('updateIntroModal.benefits3')}</li>
@@ -63,7 +64,7 @@ export function UpdateIntroModal({ isOpen, onClose }: UpdateIntroModalProps) {
             </ul>
           </div>
 
-          <div className="text-xs text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+          <div className={`${layout.smallText} text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded`}>
             {t('updateIntroModal.tip')}
           </div>
         </div>

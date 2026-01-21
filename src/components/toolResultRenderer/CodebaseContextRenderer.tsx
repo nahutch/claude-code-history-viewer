@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Renderer } from "../../shared/RendererHeader";
 import { cn } from "@/lib/utils";
-import { COLORS } from "../../constants/colors";
+import { layout } from "@/components/renderers";
 
 type Props = {
   contextData: Record<string, unknown>;
@@ -23,32 +23,27 @@ export const CodebaseContextRenderer = ({ contextData }: Props) => {
   const [showFiles, setShowFiles] = useState(false);
 
   return (
-    <Renderer
-      className={cn(
-        "bg-indigo-50 dark:bg-indigo-900/20",
-        "border-indigo-200 dark:border-indigo-800"
-      )}
-    >
+    <Renderer className="bg-accent/10 border-accent/30">
       <Renderer.Header
         title={t('codebaseContextRenderer.codebaseContext')}
-        icon={<FileText className={cn("w-4 h-4", COLORS.tools.system.icon)} />}
-        titleClassName={COLORS.tools.system.text}
+        icon={<FileText className={cn(layout.iconSize, "text-accent")} />}
+        titleClassName="text-accent"
       />
       <Renderer.Content>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className={`grid grid-cols-2 gap-4 ${layout.bodyText}`}>
           <div>
-            <span className={cn("font-medium", COLORS.tools.system.text)}>
+            <span className="font-medium text-accent">
               {t('codebaseContextRenderer.analyzedFiles')}
             </span>
-            <span className={cn("ml-2", COLORS.ui.text.primary)}>
+            <span className="ml-2 text-foreground">
               {t('codebaseContextRenderer.filesCount', { count: Number(filesAnalyzed) })}
             </span>
           </div>
           <div>
-            <span className={cn("font-medium", COLORS.tools.system.text)}>
+            <span className="font-medium text-accent">
               {t('codebaseContextRenderer.contextWindow')}
             </span>
-            <span className={cn("ml-2", COLORS.ui.text.primary)}>
+            <span className="ml-2 text-foreground">
               {String(contextWindow)}
             </span>
           </div>
@@ -59,12 +54,9 @@ export const CodebaseContextRenderer = ({ contextData }: Props) => {
             <button
               type="button"
               onClick={() => setShowFiles(!showFiles)}
-              className={cn(
-                "flex items-center space-x-1 text-sm font-medium cursor-pointer",
-                COLORS.tools.system.text
-              )}
+              className={cn("flex items-center font-medium cursor-pointer text-accent", layout.iconSpacing, layout.bodyText)}
             >
-              <ChevronRight className={cn("w-3 h-3 transition-transform", showFiles && "rotate-90")} />
+              <ChevronRight className={cn(layout.iconSizeSmall, "transition-transform", showFiles && "rotate-90")} />
               <span>{t('codebaseContextRenderer.relevantFiles', { count: relevantFiles.length })}</span>
             </button>
             {showFiles && (
@@ -72,17 +64,13 @@ export const CodebaseContextRenderer = ({ contextData }: Props) => {
                 {relevantFiles.slice(0, 10).map((file, idx) => (
                   <div
                     key={idx}
-                    className={cn(
-                      "text-xs font-mono px-2 py-1 rounded",
-                      "bg-indigo-100 dark:bg-indigo-900/40",
-                      COLORS.tools.system.text
-                    )}
+                    className={`${layout.smallText} font-mono px-2 py-1 rounded bg-accent/20 text-accent`}
                   >
                     {String(file)}
                   </div>
                 ))}
                 {relevantFiles.length > 10 && (
-                  <div className={cn("text-xs italic", COLORS.ui.text.muted)}>
+                  <div className={`${layout.smallText} italic text-muted-foreground`}>
                     {t('codebaseContextRenderer.andMoreFiles', { count: relevantFiles.length - 10 })}
                   </div>
                 )}

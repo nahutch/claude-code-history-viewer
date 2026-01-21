@@ -3,6 +3,7 @@ import { useToggle } from "../hooks";
 import { createContext, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { layout } from "@/components/renderers";
 
 const ContentContext = createContext<{
   isOpen: boolean;
@@ -53,7 +54,8 @@ const RendererWrapper = ({
     <ContentProvider hasError={hasError} enableToggle={enableToggle}>
       <div
         className={cn(
-          "mt-2 border border-border rounded-lg overflow-hidden",
+          "mt-1.5 border border-border overflow-hidden",
+          layout.rounded,
           className,
           hasError && "bg-destructive/10 border-destructive/50"
         )}
@@ -82,16 +84,16 @@ const RendererHeader = ({
 
   if (!enableToggle) {
     return (
-      <div className={cn("flex items-center justify-between px-3 py-2")}>
-        <div className="flex items-center gap-2">
+      <div className={cn("flex items-center justify-between", layout.headerPadding, layout.headerHeight)}>
+        <div className={cn("flex items-center", layout.iconGap)}>
           {hasError ? (
-            <X className="w-4 h-4 shrink-0 text-destructive" />
+            <X className={cn(layout.iconSize, "shrink-0 text-destructive")} />
           ) : (
             icon
           )}
           <span
             className={cn(
-              "text-xs font-medium",
+              layout.titleText,
               titleClassName,
               hasError && "text-destructive"
             )}
@@ -99,7 +101,9 @@ const RendererHeader = ({
             {`${title} ${hasError ? t("errorOccurred") : ""}`}
           </span>
         </div>
-        {rightContent}
+        <div className={cn("flex items-center shrink-0", layout.iconGap, layout.smallText)}>
+          {rightContent}
+        </div>
       </div>
     );
   }
@@ -108,25 +112,28 @@ const RendererHeader = ({
       type="button"
       onClick={toggle}
       className={cn(
-        "w-full flex items-center justify-between px-3 py-2 text-left",
-        "hover:bg-accent transition-colors"
+        "w-full flex items-center justify-between text-left",
+        layout.headerPadding,
+        layout.headerHeight,
+        "hover:bg-muted/50 transition-colors"
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className={cn("flex items-center", layout.iconGap)}>
         <ChevronRight
           className={cn(
-            "w-4 h-4 shrink-0 transition-transform duration-200 text-muted-foreground",
+            layout.iconSize,
+            "shrink-0 transition-transform duration-200 text-muted-foreground",
             isOpen && "rotate-90"
           )}
         />
         {hasError ? (
-          <X className="w-4 h-4 shrink-0 text-destructive" />
+          <X className={cn(layout.iconSize, "shrink-0 text-destructive")} />
         ) : (
           icon
         )}
         <span
           className={cn(
-            "text-xs font-medium",
+            layout.titleText,
             titleClassName,
             hasError && "text-destructive"
           )}
@@ -134,7 +141,9 @@ const RendererHeader = ({
           {`${title} ${hasError ? t("errorOccurred") : ""}`}
         </span>
       </div>
-      {rightContent}
+      <div className={cn("flex items-center shrink-0", layout.iconGap, layout.smallText)}>
+        {rightContent}
+      </div>
     </button>
   );
 };
@@ -147,10 +156,10 @@ const RendererContent = ({ children }: RendererContentProps) => {
   const { isOpen, enableToggle } = useContext(ContentContext);
 
   if (!enableToggle) {
-    return <div className="px-3 pb-3">{children}</div>;
+    return <div className={layout.contentPadding}>{children}</div>;
   }
 
-  return isOpen ? <div className="px-3 pb-3">{children}</div> : null;
+  return isOpen ? <div className={layout.contentPadding}>{children}</div> : null;
 };
 
 export const Renderer = Object.assign(RendererWrapper, {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FileEdit } from "lucide-react";
 import * as Diff from "diff";
+import { layout } from "@/components/renderers";
 
 type DiffMode =
   | "chars"
@@ -110,16 +111,16 @@ export const AdvancedTextDiff = ({
     diffResults.length > 20 || oldText.length + newText.length > 1000;
 
   return (
-    <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+    <div className="mt-2 p-3 bg-muted/50 border border-border rounded-lg">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <FileEdit className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          <span className="font-medium text-amber-800 dark:text-amber-200">{defaultTitle}</span>
+          <FileEdit className={`${layout.iconSize} text-tool-code`} />
+          <span className={`${layout.titleText} text-foreground`}>{defaultTitle}</span>
         </div>
         {shouldCollapse && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900 hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-700 dark:text-amber-300 rounded transition-colors"
+            className={`${layout.smallText} px-2 py-1 bg-secondary hover:bg-secondary/80 text-foreground rounded transition-colors`}
           >
             {isExpanded
               ? t("advancedTextDiff.collapse")
@@ -130,7 +131,7 @@ export const AdvancedTextDiff = ({
 
       {/* Diff Mode Selector */}
       <div className="mb-3">
-        <div className="text-xs font-medium text-muted-foreground mb-2">
+        <div className={`${layout.smallText} font-medium text-muted-foreground mb-2`}>
           {t("advancedTextDiff.comparisonMethod")}
         </div>
         <div className="flex flex-wrap gap-1">
@@ -147,10 +148,10 @@ export const AdvancedTextDiff = ({
             <button
               key={mode}
               onClick={() => setCurrentMode(mode)}
-              className={`px-2 py-1 text-xs rounded transition-colors ${
+              className={`px-2 py-1 ${layout.smallText} rounded transition-colors ${
                 currentMode === mode
-                  ? "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 font-medium"
-                  : "bg-secondary text-foreground hover:bg-secondary"
+                  ? "bg-accent text-accent-foreground font-medium"
+                  : "bg-secondary text-foreground hover:bg-secondary/80"
               }`}
             >
               {getModeLabel(mode)}
@@ -160,14 +161,14 @@ export const AdvancedTextDiff = ({
       </div>
 
       {/* Statistics */}
-      <div className="mb-3 grid grid-cols-3 gap-2 text-xs">
+      <div className={`mb-3 grid grid-cols-3 gap-2 ${layout.smallText}`}>
         <div className="bg-card p-2 rounded border border-border">
           <div className="text-muted-foreground">{t("advancedTextDiff.additions")}</div>
-          <div className="font-medium text-green-600 dark:text-green-400">+{stats.additions}</div>
+          <div className="font-medium text-success">+{stats.additions}</div>
         </div>
         <div className="bg-card p-2 rounded border border-border">
           <div className="text-muted-foreground">{t("advancedTextDiff.deletions")}</div>
-          <div className="font-medium text-red-600 dark:text-red-400">-{stats.deletions}</div>
+          <div className="font-medium text-destructive">-{stats.deletions}</div>
         </div>
         <div className="bg-card p-2 rounded border border-border">
           <div className="text-muted-foreground">{t("advancedTextDiff.same")}</div>
@@ -178,7 +179,7 @@ export const AdvancedTextDiff = ({
       {/* Diff Content */}
       {(!shouldCollapse || isExpanded) && (
         <div className="bg-card p-3 rounded border border-border max-h-96 overflow-y-auto">
-          <div className="font-mono text-sm leading-relaxed">
+          <div className={`${layout.monoText} leading-relaxed`}>
             {diffResults.map((part, index) => renderDiffPart(part, index))}
           </div>
         </div>
@@ -186,10 +187,10 @@ export const AdvancedTextDiff = ({
 
       {shouldCollapse && !isExpanded && (
         <div className="bg-card p-3 rounded border border-border text-center">
-          <div className="text-sm text-muted-foreground">
+          <div className={`${layout.bodyText} text-muted-foreground`}>
             {t("advancedTextDiff.manyChanges")}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className={`${layout.smallText} text-muted-foreground mt-1`}>
             {t("advancedTextDiff.changeSummary", {
               count: diffResults.length,
               chars: oldText.length + newText.length,

@@ -26,6 +26,9 @@ interface ProjectTreeProps {
   onGlobalStatsClick: () => void;
   isLoading: boolean;
   isViewingGlobalStats: boolean;
+  width?: number;
+  isResizing?: boolean;
+  onResizeStart?: (e: React.MouseEvent) => void;
 }
 
 export const ProjectTree: React.FC<ProjectTreeProps> = ({
@@ -37,6 +40,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   onGlobalStatsClick,
   isLoading,
   isViewingGlobalStats,
+  width,
+  isResizing,
+  onResizeStart,
 }) => {
   const [expandedProject, setExpandedProject] = useState("");
   const { t, i18n } = useTranslation();
@@ -74,25 +80,54 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     setExpandedProject((prev) => (prev === projectPath ? "" : projectPath));
   };
 
+  const sidebarStyle = width ? { width: `${width}px` } : undefined;
+
   return (
-    <aside className="w-72 flex-shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+    <aside
+      className={cn(
+        "flex-shrink-0 bg-sidebar border-r-0 flex flex-col h-full relative",
+        !width && "w-64",
+        isResizing && "select-none"
+      )}
+      style={sidebarStyle}
+    >
+      {/* Right accent border */}
+      <div className="absolute right-0 inset-y-0 w-[2px] bg-gradient-to-b from-accent/40 via-accent/60 to-accent/40" />
+
+      {/* Resize Handle */}
+      {onResizeStart && (
+        <div
+          className={cn(
+            "absolute right-0 top-0 bottom-0 w-2 cursor-col-resize z-10",
+            "hover:bg-accent/20 active:bg-accent/30 transition-colors",
+            isResizing && "bg-accent/30"
+          )}
+          onMouseDown={onResizeStart}
+        />
+      )}
+
       {/* Sidebar Header */}
-      <div className="px-4 py-3 border-b border-sidebar-border">
+      <div className="px-4 py-3 bg-accent/5 border-b border-accent/10">
         <div className="flex items-center justify-between">
-          <span className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground">
-            {t("components:project.explorer", "Explorer")}
-          </span>
-          <span className="text-2xs font-mono text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-accent">
+              {t("components:project.explorer", "Explorer")}
+            </span>
+          </div>
+          <span className="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded-full">
             {projects.length}
           </span>
         </div>
       </div>
 
       {/* Projects List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin py-2">
+      <div className="relative flex-1 overflow-y-auto scrollbar-thin py-2">
         {projects.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <Folder className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/30 flex items-center justify-center">
+              <Folder className="w-8 h-8 text-muted-foreground/40" />
+            </div>
             <p className="text-sm text-muted-foreground">
               {t("components:project.notFound", "No projects found")}
             </p>
@@ -103,19 +138,21 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
             <button
               onClick={onGlobalStatsClick}
               className={cn(
-                "sidebar-item w-full flex items-center gap-3 mx-2",
-                "text-left transition-all duration-200",
+                "sidebar-item w-full flex items-center gap-3 mx-2 group",
+                "text-left transition-all duration-300",
                 isViewingGlobalStats && "active"
               )}
               style={{ width: "calc(100% - 16px)" }}
             >
               <div
                 className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center",
-                  "bg-accent/10 text-accent"
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300",
+                  "bg-accent/10 text-accent",
+                  "group-hover:bg-accent/20 group-hover:shadow-sm group-hover:shadow-accent/20",
+                  isViewingGlobalStats && "bg-accent/20 shadow-glow"
                 )}
               >
-                <Database className="w-4 h-4" />
+                <Database className="w-4 h-4 transition-transform group-hover:scale-110" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-sidebar-foreground">
@@ -143,14 +180,20 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       toggleProject(project.path);
                     }}
                     className={cn(
-                      "w-full px-4 py-2 flex items-center gap-2",
-                      "text-left transition-all duration-200",
-                      "hover:bg-sidebar-accent/50",
-                      isExpanded && "bg-sidebar-accent/30"
+                      "w-full px-4 py-2.5 flex items-center gap-2.5",
+                      "text-left transition-all duration-300",
+                      "hover:bg-accent/8 hover:pl-5",
+                      "border-l-2 border-transparent",
+                      isExpanded && "bg-accent/10 border-l-accent pl-5"
                     )}
                   >
                     {/* Expand Icon */}
-                    <span className="text-muted-foreground">
+                    <span
+                      className={cn(
+                        "transition-all duration-300",
+                        isExpanded ? "text-accent" : "text-muted-foreground"
+                      )}
+                    >
                       {isExpanded ? (
                         <ChevronDown className="w-3.5 h-3.5" />
                       ) : (
@@ -159,29 +202,40 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                     </span>
 
                     {/* Folder Icon */}
-                    <Folder
+                    <div
                       className={cn(
-                        "w-4 h-4 flex-shrink-0",
-                        isExpanded ? "text-accent" : "text-muted-foreground"
+                        "w-6 h-6 rounded-md flex items-center justify-center transition-all duration-300",
+                        isExpanded
+                          ? "bg-accent/20 text-accent"
+                          : "bg-muted/50 text-muted-foreground"
                       )}
-                    />
+                    >
+                      <Folder className="w-3.5 h-3.5" />
+                    </div>
 
                     {/* Project Name */}
                     <span
                       className={cn(
-                        "text-sm truncate flex-1",
+                        "text-sm truncate flex-1 transition-colors duration-300",
                         isExpanded
-                          ? "text-sidebar-foreground font-medium"
-                          : "text-muted-foreground"
+                          ? "text-accent font-semibold"
+                          : "text-sidebar-foreground/80"
                       )}
                     >
                       {project.name}
                     </span>
+
+                    {/* Session count badge */}
+                    {isExpanded && sessions.length > 0 && (
+                      <span className="text-2xs font-mono text-accent/70 bg-accent/10 px-1.5 py-0.5 rounded">
+                        {sessions.length}
+                      </span>
+                    )}
                   </button>
 
                   {/* Sessions List */}
                   {isExpanded && sessions.length > 0 && !isLoading && (
-                    <div className="ml-4 pl-3 border-l border-sidebar-border/50 space-y-0.5 py-1">
+                    <div className="ml-6 pl-3 border-l-2 border-accent/20 space-y-1 py-2">
                       {sessions.map((session) => {
                         const isSessionSelected =
                           selectedSession?.session_id === session.session_id;
@@ -195,28 +249,33 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                               }
                             }}
                             className={cn(
-                              "sidebar-item w-full flex flex-col gap-1 py-2.5",
-                              "text-left transition-all duration-200",
-                              isSessionSelected && "active"
+                              "w-full flex flex-col gap-1.5 py-2.5 px-3 rounded-lg",
+                              "text-left transition-all duration-300",
+                              "hover:bg-accent/8",
+                              isSessionSelected
+                                ? "bg-accent/15 shadow-sm shadow-accent/10 ring-1 ring-accent/20"
+                                : "bg-transparent"
                             )}
                             style={{ width: "calc(100% - 8px)" }}
                           >
                             {/* Session Header */}
-                            <div className="flex items-start gap-2">
-                              <MessageCircle
+                            <div className="flex items-start gap-2.5">
+                              <div
                                 className={cn(
-                                  "w-3.5 h-3.5 mt-0.5 flex-shrink-0",
+                                  "w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-300",
                                   isSessionSelected
-                                    ? "text-accent"
-                                    : "text-muted-foreground"
+                                    ? "bg-accent text-accent-foreground"
+                                    : "bg-muted/50 text-muted-foreground"
                                 )}
-                              />
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                              </div>
                               <span
                                 className={cn(
-                                  "text-xs leading-tight line-clamp-2",
+                                  "text-xs leading-relaxed line-clamp-2 transition-colors duration-300",
                                   isSessionSelected
-                                    ? "text-sidebar-foreground font-medium"
-                                    : "text-muted-foreground"
+                                    ? "text-accent font-medium"
+                                    : "text-sidebar-foreground/70"
                                 )}
                               >
                                 {session.summary ||
@@ -228,17 +287,38 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             </div>
 
                             {/* Session Meta */}
-                            <div className="flex items-center gap-2 ml-5.5 text-2xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
+                            <div className="flex items-center gap-3 ml-7 text-2xs">
+                              <span
+                                className={cn(
+                                  "flex items-center gap-1 font-mono",
+                                  isSessionSelected
+                                    ? "text-accent/80"
+                                    : "text-muted-foreground"
+                                )}
+                              >
                                 <Clock className="w-3 h-3" />
                                 {formatTimeAgo(session.last_modified)}
                               </span>
-                              <span className="flex items-center gap-1">
+                              <span
+                                className={cn(
+                                  "flex items-center gap-1 font-mono",
+                                  isSessionSelected
+                                    ? "text-accent/80"
+                                    : "text-muted-foreground"
+                                )}
+                              >
                                 <Hash className="w-3 h-3" />
                                 {session.message_count}
                               </span>
                               {session.has_tool_use && (
-                                <Wrench className="w-3 h-3 text-accent/70" />
+                                <Wrench
+                                  className={cn(
+                                    "w-3 h-3",
+                                    isSessionSelected
+                                      ? "text-accent"
+                                      : "text-accent/50"
+                                  )}
+                                />
                               )}
                               {session.has_errors && (
                                 <AlertTriangle className="w-3 h-3 text-destructive" />
@@ -274,14 +354,20 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       </div>
 
       {/* Sidebar Footer */}
-      <div className="px-4 py-3 border-t border-sidebar-border">
-        <div className="flex items-center justify-between text-2xs text-muted-foreground">
-          <span>
-            {t("components:project.count", "{{count}} projects", {
-              count: projects.length,
-            })}
-          </span>
-          <span>
+      <div className="relative px-4 py-3 border-t border-accent/20 bg-gradient-to-r from-accent/5 via-accent/10 to-accent/5">
+        {/* Top accent line */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
+        <div className="flex items-center justify-between text-2xs">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-accent/60" />
+            <span className="tabular-nums font-mono text-accent/80">
+              {t("components:project.count", "{{count}} projects", {
+                count: projects.length,
+              })}
+            </span>
+          </div>
+          <span className="tabular-nums font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
             {t("components:session.count", "{{count}} sessions", {
               count: sessions.length,
             })}
