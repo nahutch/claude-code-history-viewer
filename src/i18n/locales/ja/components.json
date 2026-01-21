@@ -455,7 +455,9 @@
     "originalFileContent": "元のファイル内容"
   },
   "messageContentDisplay": {
-    "copyMessage": "メッセージをコピー"
+    "copyMessage": "メッセージをコピー",
+    "showMore": "もっと見る...",
+    "showLess": "折りたたむ"
   },
   "codebaseContextRenderer": {
     "codebaseContext": "コードベースコンテキスト",

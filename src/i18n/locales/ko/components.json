@@ -481,7 +481,9 @@
     "originalFileContent": "원본 파일 내용"
   },
   "messageContentDisplay": {
-    "copyMessage": "메시지 복사하기"
+    "copyMessage": "메시지 복사하기",
+    "showMore": "더 보기...",
+    "showLess": "접기"
   },
   "codebaseContextRenderer": {
     "codebaseContext": "코드베이스 컨텍스트",

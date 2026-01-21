@@ -466,7 +466,9 @@
     "originalFileContent": "Original File Content"
   },
   "messageContentDisplay": {
-    "copyMessage": "Copy Message"
+    "copyMessage": "Copy Message",
+    "showMore": "Show more...",
+    "showLess": "Show less"
   },
   "codebaseContextRenderer": {
     "codebaseContext": "Codebase Context",

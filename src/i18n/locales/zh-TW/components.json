@@ -470,7 +470,9 @@
     "originalFileContent": "原始檔案內容"
   },
   "messageContentDisplay": {
-    "copyMessage": "複製訊息"
+    "copyMessage": "複製訊息",
+    "showMore": "展開更多...",
+    "showLess": "收起"
   },
   "codebaseContextRenderer": {
     "codebaseContext": "程式庫上下文",

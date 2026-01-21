@@ -470,7 +470,9 @@
     "originalFileContent": "原始文件内容"
   },
   "messageContentDisplay": {
-    "copyMessage": "复制消息"
+    "copyMessage": "复制消息",
+    "showMore": "展开更多...",
+    "showLess": "收起"
   },
   "codebaseContextRenderer": {
     "codebaseContext": "代码库上下文",
