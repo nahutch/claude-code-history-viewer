@@ -408,6 +408,19 @@
     "executionResult": "実行結果",
     "unknownContentType": "不明なコンテンツタイプ"
   },
+  "taskNotification": {
+    "agentTask": "エージェントタスク",
+    "agentTasks": "並列タスク",
+    "summary": "概要",
+    "result": "結果",
+    "details": "詳細",
+    "showMore": "もっと見る...",
+    "status": {
+      "completed": "完了",
+      "running": "実行中",
+      "failed": "失敗"
+    }
+  },
   "toolUseRenderer": {
     "fileCreation": "ファイル作成",
     "createdContent": "作成された内容",
@@ -514,7 +527,8 @@
     "image": "画像",
     "cannotLoadImage": "画像を読み込めません",
     "viewFullscreen": "全画面表示",
-    "downloadImage": "画像をダウンロード"
+    "downloadImage": "画像をダウンロード",
+    "close": "閉じる"
   },
   "upToDateNotification": {
     "upToDate": "最新版です",
@@ -682,6 +696,18 @@
       "running": "実行中",
       "error": "エラー"
     }
+  },
+  "agentTaskGroup": {
+    "agent": "エージェント",
+    "parallelTasks": "並列タスク",
+    "completed": "完了",
+    "prompt": "プロンプト:",
+    "transcript": "トランスクリプト:",
+    "copyPath": "フルパスをコピー"
+  },
+  "agentProgressGroup": {
+    "agent": "エージェント",
+    "steps": "ステップ"
   },
   "queueOperationRenderer": {
     "title": "キュー操作",

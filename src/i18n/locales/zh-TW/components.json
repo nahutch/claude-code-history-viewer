@@ -423,6 +423,19 @@
     "executionResult": "執行結果",
     "unknownContentType": "未知內容類型"
   },
+  "taskNotification": {
+    "agentTask": "代理任務",
+    "agentTasks": "並行任務",
+    "summary": "摘要",
+    "result": "結果",
+    "details": "詳情",
+    "showMore": "展開更多...",
+    "status": {
+      "completed": "已完成",
+      "running": "執行中",
+      "failed": "失敗"
+    }
+  },
   "toolUseRenderer": {
     "fileCreation": "檔案建立",
     "createdContent": "建立的內容",
@@ -529,7 +542,8 @@
     "image": "圖像",
     "cannotLoadImage": "無法載入圖像",
     "viewFullscreen": "全螢幕檢視",
-    "downloadImage": "下載圖像"
+    "downloadImage": "下載圖像",
+    "close": "關閉"
   },
   "upToDateNotification": {
     "upToDate": "已是最新版本",
@@ -697,6 +711,18 @@
       "running": "執行中",
       "error": "錯誤"
     }
+  },
+  "agentTaskGroup": {
+    "agent": "代理程式",
+    "parallelTasks": "並行任務",
+    "completed": "已完成",
+    "prompt": "提示:",
+    "transcript": "日誌:",
+    "copyPath": "複製完整路徑"
+  },
+  "agentProgressGroup": {
+    "agent": "代理程式",
+    "steps": "步驟"
   },
   "queueOperationRenderer": {
     "title": "佇列操作",

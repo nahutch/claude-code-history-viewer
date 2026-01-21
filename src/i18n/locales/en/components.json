@@ -419,6 +419,19 @@
     "unknownContentType": "Unknown content type",
     "systemNote": "System Note"
   },
+  "taskNotification": {
+    "agentTask": "Agent Task",
+    "agentTasks": "Parallel Tasks",
+    "summary": "Summary",
+    "result": "Result",
+    "details": "Details",
+    "showMore": "Show more...",
+    "status": {
+      "completed": "completed",
+      "running": "running",
+      "failed": "failed"
+    }
+  },
   "toolUseRenderer": {
     "fileCreation": "File Creation",
     "createdContent": "Created Content",
@@ -525,7 +538,8 @@
     "image": "Image",
     "cannotLoadImage": "Cannot load image",
     "viewFullscreen": "View fullscreen",
-    "downloadImage": "Download image"
+    "downloadImage": "Download image",
+    "close": "Close"
   },
   "upToDateNotification": {
     "upToDate": "Up to date",
@@ -693,6 +707,18 @@
       "running": "Running",
       "error": "Error"
     }
+  },
+  "agentTaskGroup": {
+    "agent": "Agent",
+    "parallelTasks": "Parallel Tasks",
+    "completed": "completed",
+    "prompt": "Prompt:",
+    "transcript": "Transcript:",
+    "copyPath": "Copy full path"
+  },
+  "agentProgressGroup": {
+    "agent": "Agent",
+    "steps": "steps"
   },
   "queueOperationRenderer": {
     "title": "Queue Operation",

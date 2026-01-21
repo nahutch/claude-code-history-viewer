@@ -434,6 +434,19 @@
     "unknownContentType": "알 수 없는 콘텐츠 타입",
     "systemNote": "시스템 메모"
   },
+  "taskNotification": {
+    "agentTask": "에이전트 작업",
+    "agentTasks": "병렬 작업",
+    "summary": "요약",
+    "result": "결과",
+    "details": "상세 내용",
+    "showMore": "더 보기...",
+    "status": {
+      "completed": "완료",
+      "running": "실행 중",
+      "failed": "실패"
+    }
+  },
   "toolUseRenderer": {
     "fileCreation": "파일 작성",
     "createdContent": "작성된 내용",
@@ -540,7 +553,8 @@
     "image": "이미지",
     "cannotLoadImage": "이미지를 로드할 수 없습니다",
     "viewFullscreen": "전체 화면으로 보기",
-    "downloadImage": "이미지 다운로드"
+    "downloadImage": "이미지 다운로드",
+    "close": "닫기"
   },
   "upToDateNotification": {
     "upToDate": "최신 버전입니다",
@@ -708,6 +722,18 @@
       "running": "실행 중",
       "error": "오류"
     }
+  },
+  "agentTaskGroup": {
+    "agent": "에이전트",
+    "parallelTasks": "병렬 작업",
+    "completed": "완료",
+    "prompt": "프롬프트:",
+    "transcript": "트랜스크립트:",
+    "copyPath": "전체 경로 복사"
+  },
+  "agentProgressGroup": {
+    "agent": "에이전트",
+    "steps": "단계"
   },
   "queueOperationRenderer": {
     "title": "대기열 작업",

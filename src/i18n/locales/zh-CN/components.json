@@ -423,6 +423,19 @@
     "executionResult": "执行结果",
     "unknownContentType": "未知内容类型"
   },
+  "taskNotification": {
+    "agentTask": "代理任务",
+    "agentTasks": "并行任务",
+    "summary": "摘要",
+    "result": "结果",
+    "details": "详情",
+    "showMore": "展开更多...",
+    "status": {
+      "completed": "已完成",
+      "running": "运行中",
+      "failed": "失败"
+    }
+  },
   "toolUseRenderer": {
     "fileCreation": "文件创建",
     "createdContent": "创建的内容",
@@ -529,7 +542,8 @@
     "image": "图像",
     "cannotLoadImage": "无法加载图像",
     "viewFullscreen": "全屏查看",
-    "downloadImage": "下载图像"
+    "downloadImage": "下载图像",
+    "close": "关闭"
   },
   "upToDateNotification": {
     "upToDate": "已是最新版本",
@@ -697,6 +711,18 @@
       "running": "运行中",
       "error": "错误"
     }
+  },
+  "agentTaskGroup": {
+    "agent": "代理",
+    "parallelTasks": "并行任务",
+    "completed": "已完成",
+    "prompt": "提示:",
+    "transcript": "日志:",
+    "copyPath": "复制完整路径"
+  },
+  "agentProgressGroup": {
+    "agent": "代理",
+    "steps": "步骤"
   },
   "queueOperationRenderer": {
     "title": "队列操作",
