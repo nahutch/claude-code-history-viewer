@@ -9,11 +9,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+  Button,
+  Input,
+  Label,
+  Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+} from "@/components/ui";
 
 interface FeedbackData {
   subject: string;
@@ -106,53 +112,51 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader className="pb-2">
           <DialogTitle>{t("feedback.title")}</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs">
             {t("feedback.description", "Share your feedback to help us improve")}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Feedback Type */}
-          <div className="space-y-2">
-            <Label htmlFor="feedbackType">{t("feedback.type")}</Label>
-            <select
-              id="feedbackType"
-              value={feedbackType}
-              onChange={(e) => setFeedbackType(e.target.value)}
-              className={cn(
-                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                "transition-colors focus-visible:outline-none focus-visible:ring-2",
-                "focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              )}
-            >
-              {feedbackTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Feedback Type & Subject - Side by Side */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="feedbackType" className="text-xs">{t("feedback.type")}</Label>
+              <Select value={feedbackType} onValueChange={setFeedbackType}>
+                <SelectTrigger id="feedbackType" className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {feedbackTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value} className="text-xs">
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Subject */}
-          <div className="space-y-2">
-            <Label htmlFor="subject">{t("feedback.subjectRequired")}</Label>
-            <Input
-              id="subject"
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder={t("feedback.subjectPlaceholder")}
-              required
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="subject" className="text-xs">{t("feedback.subjectRequired")}</Label>
+              <Input
+                id="subject"
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder={t("feedback.subjectPlaceholder")}
+                required
+                className="h-8 text-xs"
+              />
+            </div>
           </div>
 
           {/* Content */}
-          <div className="space-y-2">
-            <Label htmlFor="body">{t("feedback.contentRequired")}</Label>
-            <textarea
+          <div className="space-y-1.5">
+            <Label htmlFor="body" className="text-xs">{t("feedback.contentRequired")}</Label>
+            <Textarea
               id="body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -163,30 +167,20 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
                   ? t("feedback.placeholders.feature")
                   : t("feedback.placeholders.default")
               }
-              rows={6}
-              className={cn(
-                "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                "transition-colors placeholder:text-muted-foreground resize-none",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                "focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              )}
+              rows={4}
               required
+              className="min-h-[100px] text-xs"
             />
           </div>
 
           {/* Include System Info */}
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2">
+            <Switch
               id="includeSystemInfo"
               checked={includeSystemInfo}
-              onChange={(e) => setIncludeSystemInfo(e.target.checked)}
-              className={cn(
-                "h-4 w-4 rounded border-input text-primary",
-                "focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              )}
+              onCheckedChange={setIncludeSystemInfo}
             />
-            <Label htmlFor="includeSystemInfo" className="cursor-pointer">
+            <Label htmlFor="includeSystemInfo" className="cursor-pointer text-xs">
               {t("feedback.includeSystemInfo")}
             </Label>
             {includeSystemInfo && !systemInfo && (
@@ -195,7 +189,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
                 variant="link"
                 size="sm"
                 onClick={loadSystemInfo}
-                className="h-auto p-0"
+                className="h-auto p-0 text-xs"
               >
                 {t("feedback.preview")}
               </Button>
@@ -204,61 +198,50 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
 
           {/* System Info Preview */}
           {includeSystemInfo && systemInfo && (
-            <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm">
-              <div className="flex items-center gap-2 font-medium text-foreground mb-2">
-                <InfoIcon className="h-4 w-4" />
+            <div className="rounded-md border border-border bg-muted/50 p-2.5 text-xs">
+              <div className="flex items-center gap-1.5 font-medium text-foreground mb-1.5">
+                <InfoIcon className="h-3 w-3" />
                 {t("feedback.systemInfoPreview")}
               </div>
-              <div className="space-y-1 text-muted-foreground">
-                <div>
-                  {t("feedback.appVersion", {
-                    version: systemInfo.app_version,
-                  })}
-                </div>
-                <div>
-                  {t("feedback.os", {
-                    os: systemInfo.os_type,
-                    version: systemInfo.os_version,
-                  })}
-                </div>
-                <div>
-                  {t("feedback.architecture", { arch: systemInfo.arch })}
-                </div>
+              <div className="space-y-0.5 text-muted-foreground text-[11px]">
+                <div>{t("feedback.appVersion", { version: systemInfo.app_version })}</div>
+                <div>{t("feedback.os", { os: systemInfo.os_type, version: systemInfo.os_version })}</div>
+                <div>{t("feedback.architecture", { arch: systemInfo.arch })}</div>
               </div>
             </div>
           )}
 
           {/* Action Buttons */}
-          <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
+          <DialogFooter className="flex-row gap-2 pt-2">
             <Button
               type="submit"
               disabled={isSubmitting || !subject.trim() || !body.trim()}
+              size="sm"
               className="flex-1"
             >
-              <MailIcon className="h-4 w-4" />
-              {isSubmitting
-                ? t("feedback.sendingEmail")
-                : t("feedback.sendEmail")}
+              <MailIcon className="h-3.5 w-3.5" />
+              {isSubmitting ? t("feedback.sendingEmail") : t("feedback.sendEmail")}
             </Button>
 
             <Button
               type="button"
               variant="secondary"
               onClick={handleOpenGitHub}
+              size="sm"
               className="flex-1"
             >
-              <GithubIcon className="h-4 w-4" />
+              <GithubIcon className="h-3.5 w-3.5" />
               {t("feedback.openGitHub")}
             </Button>
           </DialogFooter>
         </form>
 
-        {/* Help Tips */}
-        <div className="mt-2 rounded-lg border border-border bg-card p-4 text-sm">
-          <div className="font-medium text-foreground mb-2">
+        {/* Help Tips - Compact */}
+        <div className="rounded-md border border-border bg-card p-2.5 text-xs">
+          <div className="font-medium text-foreground mb-1">
             {t("feedback.tips")}
           </div>
-          <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+          <ul className="list-disc list-inside space-y-0.5 text-muted-foreground text-[11px] ml-1">
             <li>{t("feedback.tipBugReport")}</li>
             <li>{t("feedback.tipFeatureRequest")}</li>
             <li>{t("feedback.tipScreenshot")}</li>

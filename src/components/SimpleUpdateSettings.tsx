@@ -5,13 +5,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+  Button,
+  Label,
+  Switch,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Badge,
+  Separator,
+} from "@/components/ui";
 import { RefreshCw, Trash2, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getUpdateSettings, setUpdateSettings } from '@/utils/updateSettings';
 import { clearUpdateCache } from '@/utils/updateCache';
 import type { UpdateSettings } from '@/types/updateSettings';
-import { layout } from "@/components/renderers";
 
 interface SimpleUpdateSettingsProps {
   isOpen: boolean;
@@ -20,7 +29,12 @@ interface SimpleUpdateSettingsProps {
   isCheckingForUpdates?: boolean;
 }
 
-export function SimpleUpdateSettings({ isOpen, onClose, onManualCheck, isCheckingForUpdates = false }: SimpleUpdateSettingsProps) {
+export function SimpleUpdateSettings({
+  isOpen,
+  onClose,
+  onManualCheck,
+  isCheckingForUpdates = false
+}: SimpleUpdateSettingsProps) {
   const { t } = useTranslation('components');
   const [settings, setLocalSettings] = useState<UpdateSettings>(getUpdateSettings());
   const [hasChanges, setHasChanges] = useState(false);
@@ -56,7 +70,6 @@ export function SimpleUpdateSettings({ isOpen, onClose, onManualCheck, isCheckin
   const handleManualCheckClick = () => {
     if (onManualCheck) {
       onManualCheck();
-      // 업데이트 확인 중일 때는 모달을 닫지 않음
     }
   };
 
@@ -67,85 +80,99 @@ export function SimpleUpdateSettings({ isOpen, onClose, onManualCheck, isCheckin
           <DialogTitle>{t('updateSettingsModal.title')}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 dark:text-gray-300">
-          {/* 자동 체크 설정 */}
+        <div className="space-y-4 py-4">
+          {/* Auto Check Setting */}
           <div className="flex items-center justify-between">
-            <label className={`${layout.bodyText} font-medium dark:text-gray-200`}>{t('updateSettingsModal.autoCheck')}</label>
-            <input
-              type="checkbox"
+            <Label htmlFor="autoCheck" className="cursor-pointer">
+              {t('updateSettingsModal.autoCheck')}
+            </Label>
+            <Switch
+              id="autoCheck"
               checked={settings.autoCheck}
-              onChange={(e) => updateSetting('autoCheck', e.target.checked)}
-              className="rounded dark:bg-gray-700 dark:border-gray-600"
+              onCheckedChange={(checked) => updateSetting('autoCheck', checked)}
             />
           </div>
 
-          {/* 체크 주기 설정 */}
+          {/* Check Interval Setting */}
           {settings.autoCheck && (
             <div className="space-y-2">
-              <label className={`${layout.bodyText} font-medium dark:text-gray-200`}>{t('updateSettingsModal.checkInterval')}</label>
-              <select
+              <Label htmlFor="checkInterval">
+                {t('updateSettingsModal.checkInterval')}
+              </Label>
+              <Select
                 value={settings.checkInterval}
-                onChange={(e) => updateSetting('checkInterval', e.target.value as 'startup' | 'daily' | 'weekly' | 'never')}
-                className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                onValueChange={(value) => updateSetting('checkInterval', value as 'startup' | 'daily' | 'weekly' | 'never')}
               >
-                <option value="startup">{t('updateSettingsModal.intervalStartup')}</option>
-                <option value="daily">{t('updateSettingsModal.intervalDaily')}</option>
-                <option value="weekly">{t('updateSettingsModal.intervalWeekly')}</option>
-              </select>
+                <SelectTrigger id="checkInterval">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="startup">{t('updateSettingsModal.intervalStartup')}</SelectItem>
+                  <SelectItem value="daily">{t('updateSettingsModal.intervalDaily')}</SelectItem>
+                  <SelectItem value="weekly">{t('updateSettingsModal.intervalWeekly')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
-          {/* 오프라인 설정 */}
+          {/* Offline Status Setting */}
           <div className="flex items-center justify-between">
-            <label className={`${layout.bodyText} font-medium dark:text-gray-200`}>{t('updateSettingsModal.respectOfflineStatus')}</label>
-            <input
-              type="checkbox"
+            <Label htmlFor="respectOfflineStatus" className="cursor-pointer">
+              {t('updateSettingsModal.respectOfflineStatus')}
+            </Label>
+            <Switch
+              id="respectOfflineStatus"
               checked={settings.respectOfflineStatus}
-              onChange={(e) => updateSetting('respectOfflineStatus', e.target.checked)}
-              className="rounded dark:bg-gray-700 dark:border-gray-600"
+              onCheckedChange={(checked) => updateSetting('respectOfflineStatus', checked)}
             />
           </div>
 
-          {/* 중요 업데이트 설정 */}
+          {/* Critical Updates Setting */}
           <div className="flex items-center justify-between">
-            <label className={`${layout.bodyText} font-medium dark:text-gray-200`}>{t('updateSettingsModal.allowCriticalUpdates')}</label>
-            <input
-              type="checkbox"
+            <Label htmlFor="allowCriticalUpdates" className="cursor-pointer">
+              {t('updateSettingsModal.allowCriticalUpdates')}
+            </Label>
+            <Switch
+              id="allowCriticalUpdates"
               checked={settings.allowCriticalUpdates}
-              onChange={(e) => updateSetting('allowCriticalUpdates', e.target.checked)}
-              className="rounded dark:bg-gray-700 dark:border-gray-600"
+              onCheckedChange={(checked) => updateSetting('allowCriticalUpdates', checked)}
             />
           </div>
 
-          {/* 건너뛴 버전 관리 */}
+          {/* Skipped Versions Management */}
           {settings.skippedVersions.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className={`${layout.bodyText} font-medium dark:text-gray-200`}>{t('updateSettingsModal.skippedVersions')}</label>
-                <button
+                <Label>{t('updateSettingsModal.skippedVersions')}</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => updateSetting('skippedVersions', [])}
-                  className={`${layout.smallText} text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300`}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="w-3 h-3 inline mr-1" />
+                  <Trash2 className="w-3 h-3 mr-1" />
                   {t('updateSettingsModal.clearAll')}
-                </button>
+                </Button>
               </div>
               <div className="flex flex-wrap gap-1">
                 {settings.skippedVersions.map((version) => (
-                  <span key={version} className={`px-2 py-1 ${layout.smallText} bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded`}>
+                  <Badge key={version} variant="secondary">
                     v{version}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>
           )}
 
-          {/* 수동 액션 */}
-          <div className="border-t dark:border-gray-600 pt-4 space-y-2">
-            <button
+          {/* Manual Actions */}
+          <Separator />
+
+          <div className="space-y-2">
+            <Button
+              variant="outline"
               onClick={handleManualCheckClick}
               disabled={isCheckingForUpdates}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 border dark:border-gray-600 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full"
             >
               {isCheckingForUpdates ? (
                 <>
@@ -158,31 +185,26 @@ export function SimpleUpdateSettings({ isOpen, onClose, onManualCheck, isCheckin
                   {t('updateSettingsModal.checkNow')}
                 </>
               )}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               onClick={handleClearCache}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 border dark:border-gray-600 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="w-full"
             >
               <Trash2 className="w-4 h-4" />
               {t('updateSettingsModal.clearCache')}
-            </button>
+            </Button>
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border dark:border-gray-600 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
+          <Button variant="outline" onClick={onClose}>
             {t('updateSettingsModal.close')}
-          </button>
+          </Button>
           {hasChanges && (
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600"
-            >
+            <Button onClick={handleSave}>
               {t('updateSettingsModal.save')}
-            </button>
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

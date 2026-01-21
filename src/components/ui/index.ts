@@ -5,6 +5,11 @@
 export * from "./button";
 export * from "./input";
 export * from "./label";
+export * from "./textarea";
+
+// Form Controls
+export * from "./select";
+export * from "./switch";
 
 // Layout
 export * from "./card";
