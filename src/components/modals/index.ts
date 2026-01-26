@@ -1,2 +1,3 @@
 export { FolderSelectorContainer } from "./folderSelect/FolderSelectorContainer";
 export { FeedbackModalContainer } from "./feedback/FeedbackModalContainer";
+export { SettingsModalContainer } from "./settings/SettingsModalContainer";

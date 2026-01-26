@@ -9,6 +9,11 @@ pub mod test_utils;
 use dotenvy_macro::dotenv;
 
 use crate::commands::{
+    claude_settings::{
+        apply_preset, delete_preset, get_merged_settings, get_preset, invalidate_settings_cache,
+        list_presets, read_claude_settings, save_preset, write_claude_settings,
+        ClaudeSettingsState,
+    },
     feedback::{get_system_info, open_github_issues, send_feedback},
     metadata::{
         get_metadata_folder_path, get_session_display_name, is_project_hidden, load_user_metadata,
@@ -48,6 +53,7 @@ pub fn run() {
 
     builder
         .manage(MetadataState::default())
+        .manage(ClaudeSettingsState::default())
         .invoke_handler(tauri::generate_handler![
             get_claude_folder_path,
             validate_claude_folder,
@@ -75,7 +81,17 @@ pub fn run() {
             update_project_metadata,
             update_user_settings,
             is_project_hidden,
-            get_session_display_name
+            get_session_display_name,
+            // Claude Code settings commands
+            read_claude_settings,
+            write_claude_settings,
+            get_merged_settings,
+            list_presets,
+            get_preset,
+            save_preset,
+            delete_preset,
+            apply_preset,
+            invalidate_settings_cache
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

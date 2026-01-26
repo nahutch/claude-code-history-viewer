@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type ModalType = "feedback" | "folderSelector";
+export type ModalType = "feedback" | "folderSelector" | "settings";
 export type FolderSelectorMode = "notFound" | "change";
 
 interface ModalContextValue {

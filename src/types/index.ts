@@ -159,3 +159,24 @@ export {
   getSessionDisplayName,
   isProjectHidden,
 } from "./metadata.types";
+
+// ============================================================================
+// Claude Settings Types
+// ============================================================================
+export type {
+  SettingsScope,
+  PermissionsConfig,
+  ClaudeCodeSettings,
+  PresetType,
+  Preset,
+  PresetInfo,
+  SettingsCache,
+} from "./claudeSettings";
+export {
+  getScopePriority,
+  isPermissionsEmpty,
+  isSettingsEmpty,
+  toPresetInfo,
+  isBuiltinPreset,
+  isBuiltinPresetId,
+} from "./claudeSettings";

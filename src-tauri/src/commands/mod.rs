@@ -1,3 +1,4 @@
+pub mod claude_settings;
 pub mod feedback;
 pub mod metadata;
 pub mod project;

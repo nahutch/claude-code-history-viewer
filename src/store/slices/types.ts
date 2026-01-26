@@ -20,6 +20,10 @@ import type {
   SessionMetadata,
   ProjectMetadata,
   UserSettings,
+  ClaudeCodeSettings,
+  SettingsScope,
+  PresetInfo,
+  SettingsCache,
 } from "../../types";
 import type { ProjectTokenStatsPagination } from "./messageSlice";
 import type { AnalyticsState, AnalyticsViewType } from "../../types/analytics";
@@ -136,6 +140,14 @@ export interface AppStoreState {
   // Capture mode state
   isCaptureMode: boolean;
   hiddenMessageIds: string[];
+
+  // Claude Settings state
+  settingsCache: SettingsCache;
+  mergedSettings: ClaudeCodeSettings | null;
+  presets: PresetInfo[];
+  activePresetId: string | null;
+  isLoadingSettings: boolean;
+  settingsError: string | null;
 }
 
 export interface AppStoreActions {
@@ -234,6 +246,24 @@ export interface AppStoreActions {
   restoreAllMessages: () => void;
   isMessageHidden: (uuid: string) => boolean;
   getHiddenCount: () => number;
+
+  // Claude Settings actions
+  loadSettings: (scope: SettingsScope, projectPath?: string) => Promise<void>;
+  saveSettings: (
+    scope: SettingsScope,
+    settings: ClaudeCodeSettings,
+    projectPath?: string
+  ) => Promise<void>;
+  loadMergedSettings: (projectPath?: string) => Promise<void>;
+  loadPresets: () => Promise<void>;
+  applyPreset: (
+    presetId: string,
+    scope: SettingsScope,
+    projectPath?: string
+  ) => Promise<void>;
+  saveAsPreset: (name: string, icon: string, description?: string) => Promise<void>;
+  deletePreset: (id: string) => Promise<void>;
+  clearSettingsError: () => void;
 }
 
 export type FullAppStore = AppStoreState & AppStoreActions;
