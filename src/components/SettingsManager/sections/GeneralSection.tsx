@@ -349,41 +349,6 @@ export const GeneralSection: React.FC<GeneralSectionProps> = React.memo(({
               />
             </div>
 
-            {/* Show Turn Duration */}
-            <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="show-turn-duration">
-                  {t("settingsManager.general.showTurnDuration")}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t("settingsManager.general.showTurnDurationDesc")}
-                </p>
-              </div>
-              <Switch
-                id="show-turn-duration"
-                checked={settings.showTurnDuration ?? true}
-                onCheckedChange={handleBooleanChange("showTurnDuration")}
-                disabled={readOnly}
-              />
-            </div>
-
-            {/* Spinner Tips */}
-            <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="spinner-tips">
-                  {t("settingsManager.general.spinnerTips")}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t("settingsManager.general.spinnerTipsDesc")}
-                </p>
-              </div>
-              <Switch
-                id="spinner-tips"
-                checked={settings.spinnerTipsEnabled ?? true}
-                onCheckedChange={handleBooleanChange("spinnerTipsEnabled")}
-                disabled={readOnly}
-              />
-            </div>
           </div>
 
           <Separator className="opacity-50" />
@@ -432,27 +397,6 @@ export const GeneralSection: React.FC<GeneralSectionProps> = React.memo(({
             </div>
           </div>
 
-          <Separator className="opacity-50" />
-
-          {/* ============================================================= */}
-          {/* API Key Acknowledgment (existing) */}
-          {/* ============================================================= */}
-          <div className="flex items-center justify-between py-2">
-            <div className="space-y-0.5">
-              <Label htmlFor="api-key-acknowledge">
-                {t("settingsManager.visual.apiKey")}
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                {t("settingsManager.visual.apiKeyAcknowledge")}
-              </p>
-            </div>
-            <Switch
-              id="api-key-acknowledge"
-              checked={settings.customApiKeyResponsibleUseAcknowledged ?? false}
-              onCheckedChange={handleBooleanChange("customApiKeyResponsibleUseAcknowledged")}
-              disabled={readOnly}
-            />
-          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>

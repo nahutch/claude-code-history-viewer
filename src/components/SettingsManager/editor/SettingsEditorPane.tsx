@@ -18,11 +18,9 @@ import { EffectiveSummaryBanner } from "./EffectiveSummaryBanner";
 import { EditorFooter } from "./EditorFooter";
 import { GeneralSection } from "../sections/GeneralSection";
 import { PermissionsSection } from "../sections/PermissionsSection";
-import { SandboxSection } from "../sections/SandboxSection";
 import { MCPServersSection } from "../sections/MCPServersSection";
 import { HooksSection } from "../sections/HooksSection";
 import { EnvVarsSection } from "../sections/EnvVarsSection";
-import { CustomFieldsSection } from "../sections/CustomFieldsSection";
 import { EmptyState } from "../components/EmptyState";
 import type { ClaudeCodeSettings } from "@/types";
 
@@ -197,17 +195,6 @@ export const SettingsEditorPane: React.FC<SettingsEditorPaneProps> = ({
                 />
               </div>
 
-              {/* Sandbox Section */}
-              <div ref={(el) => { sectionRefs.current["sandbox"] = el; }}>
-                <SandboxSection
-                  settings={effectiveSettings}
-                  isExpanded={expandedSections.has("sandbox")}
-                  onToggle={() => toggleSection("sandbox")}
-                  onChange={handleSettingsChange}
-                  readOnly={isReadOnly}
-                />
-              </div>
-
               {/* MCP Servers Section */}
               <div ref={(el) => { sectionRefs.current["mcp"] = el; }}>
                 <MCPServersSection
@@ -234,17 +221,6 @@ export const SettingsEditorPane: React.FC<SettingsEditorPaneProps> = ({
                   settings={effectiveSettings}
                   isExpanded={expandedSections.has("env")}
                   onToggle={() => toggleSection("env")}
-                  onChange={handleSettingsChange}
-                  readOnly={isReadOnly}
-                />
-              </div>
-
-              {/* Custom Fields Section */}
-              <div ref={(el) => { sectionRefs.current["custom"] = el; }}>
-                <CustomFieldsSection
-                  settings={effectiveSettings}
-                  isExpanded={expandedSections.has("custom")}
-                  onToggle={() => toggleSection("custom")}
                   onChange={handleSettingsChange}
                   readOnly={isReadOnly}
                 />
