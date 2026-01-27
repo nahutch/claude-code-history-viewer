@@ -50,7 +50,9 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       className={cn(
         "w-60 shrink-0 flex flex-col gap-3",
         "border-r border-border/40 pr-4",
-        "overflow-auto"
+        // Sticky: fixed position while parent scrolls
+        // top-6 for header clearance
+        "sticky top-6 self-start"
       )}
     >
       {/* Context Selector - Always visible, not collapsible */}
@@ -86,13 +88,10 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Spacer to push Advanced to bottom */}
-      <div className="flex-1" />
-
       {/* Divider */}
       <div className="border-t border-border/40" />
 
-      {/* Advanced Options - Collapsed by default */}
+      {/* Advanced Options - Now directly after Presets */}
       <Collapsible open={advancedExpanded} onOpenChange={setAdvancedExpanded}>
         <CollapsibleTrigger
           className={cn(

@@ -28,8 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, FolderTree } from "lucide-react";
 import { useSettingsManager } from "../UnifiedSettingsManager";
+import { SettingsAnalyzerDialog } from "../dialogs/SettingsAnalyzerDialog";
 import type { ClaudeCodeSettings, SettingsScope } from "@/types";
 
 // ============================================================================
@@ -43,6 +44,7 @@ export const ActionPanel: React.FC = () => {
   // State
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isAnalyzerOpen, setIsAnalyzerOpen] = useState(false);
   const [excludeSensitive, setExcludeSensitive] = useState(true);
   const [importScope, setImportScope] = useState<SettingsScope>("user");
   const [importedSettings, setImportedSettings] = useState<ClaudeCodeSettings | null>(null);
@@ -194,6 +196,23 @@ export const ActionPanel: React.FC = () => {
           ? t("common.loading")
           : t("settingsManager.exportImport.import")}
       </Button>
+
+      {/* Settings Analyzer Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-start h-8 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors duration-150"
+        onClick={() => setIsAnalyzerOpen(true)}
+      >
+        <FolderTree className="w-4 h-4 mr-2 text-muted-foreground" />
+        {t("settingsManager.analyzer.button")}
+      </Button>
+
+      {/* Settings Analyzer Dialog */}
+      <SettingsAnalyzerDialog
+        open={isAnalyzerOpen}
+        onOpenChange={setIsAnalyzerOpen}
+      />
 
       {/* Export Dialog */}
       <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>

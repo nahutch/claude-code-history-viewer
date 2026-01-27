@@ -3,6 +3,7 @@ pub mod metadata;
 pub mod project;
 pub mod session;
 pub mod stats;
+pub mod unified_presets;
 
 #[cfg(test)]
 mod proptest_examples;

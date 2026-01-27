@@ -205,3 +205,18 @@ export {
 // ============================================================================
 export type { MCPPresetData, MCPPresetInput } from "./mcpPreset.types";
 export { parseMCPServers, formatMCPPresetDate } from "./mcpPreset.types";
+
+// ============================================================================
+// Unified Preset Types
+// ============================================================================
+export type {
+  UnifiedPresetData,
+  UnifiedPresetSummary,
+  UnifiedPresetInput,
+  UnifiedPresetApplyOptions,
+} from "./unifiedPreset";
+export {
+  computePresetSummary,
+  parsePresetContent,
+  formatPresetDate as formatUnifiedPresetDate,
+} from "./unifiedPreset";

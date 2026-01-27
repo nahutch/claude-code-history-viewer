@@ -167,10 +167,10 @@ export const SettingsEditorPane: React.FC<SettingsEditorPaneProps> = ({
   }
 
   return (
-    <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+    <main className="flex-1 min-w-0 flex flex-col">
       {/* Main Editor Content */}
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 overflow-auto p-4">
+      <Card className="flex-1 flex flex-col">
+        <CardContent className="flex-1 p-4">
           {editorMode === "visual" ? (
             <div className="space-y-2">
               {/* General Section */}

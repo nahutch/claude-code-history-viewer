@@ -264,7 +264,7 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
 
   return (
     <SettingsManagerContext.Provider value={contextValue}>
-      <div className={`flex flex-col h-full ${className || ""}`}>
+      <div className={`flex flex-col ${className || ""}`}>
         {/* Command Palette (⌘K) */}
         <SettingsCommandPalette onSectionJump={handleSectionJump} />
 
@@ -289,7 +289,7 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
           loadingMessage={t("settingsManager.loading")}
           spinnerSize="lg"
         >
-          <div className="flex gap-4 flex-1 min-h-0">
+          <div className="flex gap-4">
             {/* Left Sidebar */}
             <SettingsSidebar availableScopes={availableScopes} />
 
