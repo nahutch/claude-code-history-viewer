@@ -2,6 +2,9 @@
  * PermissionsSection Component
  *
  * Accordion section for permissions settings:
+ * - Default permission mode (acceptEdits/askPermissions/viewOnly)
+ * - Additional directories
+ * - Disable bypass permissions mode
  * - Allow list
  * - Deny list
  * - Ask list
@@ -15,12 +18,20 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Shield, Plus, X } from "lucide-react";
-import type { ClaudeCodeSettings } from "@/types";
+import { Switch } from "@/components/ui/switch";
+import { ChevronDown, ChevronRight, Shield, Plus, X, FolderOpen } from "lucide-react";
+import type { ClaudeCodeSettings, PermissionDefaultMode } from "@/types";
 
 // ============================================================================
 // Types
@@ -148,43 +159,64 @@ export const PermissionsSection: React.FC<PermissionsSectionProps> = React.memo(
   readOnly,
 }) => {
   const { t } = useTranslation();
+  const [newDirectory, setNewDirectory] = useState("");
 
   const allowList = settings.permissions?.allow ?? [];
   const denyList = settings.permissions?.deny ?? [];
   const askList = settings.permissions?.ask ?? [];
+  const additionalDirectories = settings.permissions?.additionalDirectories ?? [];
+  const defaultMode = settings.permissions?.defaultMode ?? "askPermissions";
+  const disableBypassPermissionsMode = settings.permissions?.disableBypassPermissionsMode === "disable";
 
   const totalCount = allowList.length + denyList.length + askList.length;
 
-  const handleAllowChange = (items: string[]) => {
+  const updatePermissions = (updates: Partial<ClaudeCodeSettings["permissions"]>) => {
     onChange({
       permissions: {
         ...settings.permissions,
-        allow: items,
+        allow: allowList,
         deny: denyList,
         ask: askList,
+        additionalDirectories,
+        defaultMode,
+        ...(disableBypassPermissionsMode ? { disableBypassPermissionsMode: "disable" as const } : {}),
+        ...updates,
       },
     });
+  };
+
+  const handleAllowChange = (items: string[]) => {
+    updatePermissions({ allow: items });
   };
 
   const handleDenyChange = (items: string[]) => {
-    onChange({
-      permissions: {
-        ...settings.permissions,
-        allow: allowList,
-        deny: items,
-        ask: askList,
-      },
-    });
+    updatePermissions({ deny: items });
   };
 
   const handleAskChange = (items: string[]) => {
-    onChange({
-      permissions: {
-        ...settings.permissions,
-        allow: allowList,
-        deny: denyList,
-        ask: items,
-      },
+    updatePermissions({ ask: items });
+  };
+
+  const handleDefaultModeChange = (value: string) => {
+    updatePermissions({ defaultMode: value as PermissionDefaultMode });
+  };
+
+  const handleBypassToggle = (checked: boolean) => {
+    updatePermissions({ disableBypassPermissionsMode: checked ? "disable" : undefined });
+  };
+
+  const addDirectory = () => {
+    if (newDirectory.trim() && !additionalDirectories.includes(newDirectory.trim())) {
+      updatePermissions({
+        additionalDirectories: [...additionalDirectories, newDirectory.trim()],
+      });
+      setNewDirectory("");
+    }
+  };
+
+  const removeDirectory = (index: number) => {
+    updatePermissions({
+      additionalDirectories: additionalDirectories.filter((_, i) => i !== index),
     });
   };
 
@@ -210,36 +242,159 @@ export const PermissionsSection: React.FC<PermissionsSectionProps> = React.memo(
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="pl-10 pr-4 pb-4 pt-2 space-y-4">
-          {/* Allow List */}
-          <PermissionListEditor
-            title={t("settingsManager.visual.allowList")}
-            items={allowList}
-            onItemsChange={handleAllowChange}
-            placeholder="e.g., Bash(rg:*), Read(/path/**)"
-            readOnly={readOnly}
-            variant="allow"
-          />
+        <div className="pl-10 pr-4 pb-4 pt-2 space-y-6">
+          {/* Default Mode & Bypass Settings */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-muted-foreground border-b pb-2">
+              {t("settingsManager.permissions.modeSettings")}
+            </h4>
 
-          {/* Deny List */}
-          <PermissionListEditor
-            title={t("settingsManager.visual.denyList")}
-            items={denyList}
-            onItemsChange={handleDenyChange}
-            placeholder="e.g., Write(/sensitive/**)"
-            readOnly={readOnly}
-            variant="deny"
-          />
+            {/* Default Permission Mode */}
+            <div className="space-y-2">
+              <Label className="text-sm">
+                {t("settingsManager.permissions.defaultMode")}
+              </Label>
+              <Select
+                value={defaultMode}
+                onValueChange={handleDefaultModeChange}
+                disabled={readOnly}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="acceptEdits">
+                    {t("settingsManager.permissions.mode.acceptEdits")}
+                  </SelectItem>
+                  <SelectItem value="askPermissions">
+                    {t("settingsManager.permissions.mode.askPermissions")}
+                  </SelectItem>
+                  <SelectItem value="viewOnly">
+                    {t("settingsManager.permissions.mode.viewOnly")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t("settingsManager.permissions.defaultModeDesc")}
+              </p>
+            </div>
 
-          {/* Ask List */}
-          <PermissionListEditor
-            title={t("settingsManager.unified.permissions.askList")}
-            items={askList}
-            onItemsChange={handleAskChange}
-            placeholder="e.g., Bash(rm:*)"
-            readOnly={readOnly}
-            variant="ask"
-          />
+            {/* Disable Bypass Permissions Mode */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm">
+                  {t("settingsManager.permissions.disableBypass")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t("settingsManager.permissions.disableBypassDesc")}
+                </p>
+              </div>
+              <Switch
+                checked={disableBypassPermissionsMode}
+                onCheckedChange={handleBypassToggle}
+                disabled={readOnly}
+              />
+            </div>
+          </div>
+
+          {/* Additional Directories */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground border-b pb-2 flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              {t("settingsManager.permissions.additionalDirectories")}
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              {t("settingsManager.permissions.additionalDirectoriesDesc")}
+            </p>
+
+            <div className="space-y-1.5">
+              {additionalDirectories.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic py-1">
+                  {t("settingsManager.permissions.noAdditionalDirs")}
+                </p>
+              ) : (
+                additionalDirectories.map((dir, index) => (
+                  <div
+                    key={`${dir}-${index}`}
+                    className="flex items-center gap-2 group"
+                  >
+                    <Badge
+                      variant="outline"
+                      className="flex-1 justify-start font-mono text-xs py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    >
+                      {dir}
+                    </Badge>
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeDirectory(index)}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            {!readOnly && (
+              <div className="flex gap-2 pt-1">
+                <Input
+                  value={newDirectory}
+                  onChange={(e) => setNewDirectory(e.target.value)}
+                  placeholder="/path/to/additional/directory"
+                  className="h-8 text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addDirectory();
+                    }
+                  }}
+                />
+                <Button size="sm" className="h-8" onClick={addDirectory}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Permission Lists */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-muted-foreground border-b pb-2">
+              {t("settingsManager.permissions.patternRules")}
+            </h4>
+
+            {/* Allow List */}
+            <PermissionListEditor
+              title={t("settingsManager.visual.allowList")}
+              items={allowList}
+              onItemsChange={handleAllowChange}
+              placeholder="e.g., Bash(rg:*), Read(/path/**)"
+              readOnly={readOnly}
+              variant="allow"
+            />
+
+            {/* Deny List */}
+            <PermissionListEditor
+              title={t("settingsManager.visual.denyList")}
+              items={denyList}
+              onItemsChange={handleDenyChange}
+              placeholder="e.g., Write(/sensitive/**)"
+              readOnly={readOnly}
+              variant="deny"
+            />
+
+            {/* Ask List */}
+            <PermissionListEditor
+              title={t("settingsManager.unified.permissions.askList")}
+              items={askList}
+              onItemsChange={handleAskChange}
+              placeholder="e.g., Bash(rm:*)"
+              readOnly={readOnly}
+              variant="ask"
+            />
+          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>

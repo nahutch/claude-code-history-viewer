@@ -8,7 +8,7 @@
  */
 
 import * as React from "react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,6 +18,7 @@ import { EffectiveSummaryBanner } from "./EffectiveSummaryBanner";
 import { EditorFooter } from "./EditorFooter";
 import { GeneralSection } from "../sections/GeneralSection";
 import { PermissionsSection } from "../sections/PermissionsSection";
+import { SandboxSection } from "../sections/SandboxSection";
 import { MCPServersSection } from "../sections/MCPServersSection";
 import { HooksSection } from "../sections/HooksSection";
 import { EnvVarsSection } from "../sections/EnvVarsSection";
@@ -41,7 +42,13 @@ type SaveResult = {
   message: string;
 } | null;
 
-export const SettingsEditorPane: React.FC = () => {
+interface SettingsEditorPaneProps {
+  onSectionJump?: (handler: (sectionId: string) => void) => void;
+}
+
+export const SettingsEditorPane: React.FC<SettingsEditorPaneProps> = ({
+  onSectionJump,
+}) => {
   const { t } = useTranslation();
   const {
     allSettings,
@@ -49,13 +56,13 @@ export const SettingsEditorPane: React.FC = () => {
     currentSettings,
     isReadOnly,
     saveSettings,
+    pendingSettings,
+    setPendingSettings,
+    hasUnsavedChanges,
   } = useSettingsManager();
 
   // Editor mode state
   const [editorMode, setEditorMode] = useState<EditorMode>("visual");
-
-  // Pending changes state (for dirty tracking)
-  const [pendingSettings, setPendingSettings] = useState<ClaudeCodeSettings | null>(null);
 
   // Save operation state
   const [isSaving, setIsSaving] = useState(false);
@@ -65,6 +72,27 @@ export const SettingsEditorPane: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["general", "mcp"])
   );
+
+  // Section refs for scrolling
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Jump to section handler
+  const jumpToSection = useCallback((sectionId: string) => {
+    // Expand the section
+    setExpandedSections((prev) => new Set([...prev, sectionId]));
+    // Scroll to section after a brief delay for expansion animation
+    setTimeout(() => {
+      const sectionEl = sectionRefs.current[sectionId];
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  }, []);
+
+  // Register jump handler with parent
+  useEffect(() => {
+    onSectionJump?.(jumpToSection);
+  }, [onSectionJump, jumpToSection]);
 
   // Clear save result after delay
   React.useEffect(() => {
@@ -79,12 +107,6 @@ export const SettingsEditorPane: React.FC = () => {
 
   // Get effective settings (pending or current)
   const effectiveSettings = pendingSettings ?? currentSettings;
-
-  // Check if there are unsaved changes
-  const hasUnsavedChanges = useMemo(() => {
-    if (!pendingSettings) return false;
-    return JSON.stringify(pendingSettings) !== JSON.stringify(currentSettings);
-  }, [pendingSettings, currentSettings]);
 
   // Handle section toggle
   const toggleSection = (sectionId: string) => {
@@ -137,11 +159,6 @@ export const SettingsEditorPane: React.FC = () => {
     setPendingSettings(null);
   };
 
-  // Reset pending settings when scope changes
-  React.useEffect(() => {
-    setPendingSettings(null);
-  }, [activeScope]);
-
   // If no settings exist for this scope
   if (!hasSettings) {
     return (
@@ -153,67 +170,85 @@ export const SettingsEditorPane: React.FC = () => {
 
   return (
     <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-      {/* Effective Settings Banner */}
-      {allSettings && (
-        <EffectiveSummaryBanner allSettings={allSettings} />
-      )}
-
       {/* Main Editor Content */}
       <Card className="flex-1 flex flex-col overflow-hidden">
         <CardContent className="flex-1 overflow-auto p-4">
           {editorMode === "visual" ? (
             <div className="space-y-2">
               {/* General Section */}
-              <GeneralSection
-                settings={effectiveSettings}
-                isExpanded={expandedSections.has("general")}
-                onToggle={() => toggleSection("general")}
-                onChange={handleSettingsChange}
-                readOnly={isReadOnly}
-              />
+              <div ref={(el) => { sectionRefs.current["general"] = el; }}>
+                <GeneralSection
+                  settings={effectiveSettings}
+                  isExpanded={expandedSections.has("general")}
+                  onToggle={() => toggleSection("general")}
+                  onChange={handleSettingsChange}
+                  readOnly={isReadOnly}
+                />
+              </div>
 
               {/* Permissions Section */}
-              <PermissionsSection
-                settings={effectiveSettings}
-                isExpanded={expandedSections.has("permissions")}
-                onToggle={() => toggleSection("permissions")}
-                onChange={handleSettingsChange}
-                readOnly={isReadOnly}
-              />
+              <div ref={(el) => { sectionRefs.current["permissions"] = el; }}>
+                <PermissionsSection
+                  settings={effectiveSettings}
+                  isExpanded={expandedSections.has("permissions")}
+                  onToggle={() => toggleSection("permissions")}
+                  onChange={handleSettingsChange}
+                  readOnly={isReadOnly}
+                />
+              </div>
+
+              {/* Sandbox Section */}
+              <div ref={(el) => { sectionRefs.current["sandbox"] = el; }}>
+                <SandboxSection
+                  settings={effectiveSettings}
+                  isExpanded={expandedSections.has("sandbox")}
+                  onToggle={() => toggleSection("sandbox")}
+                  onChange={handleSettingsChange}
+                  readOnly={isReadOnly}
+                />
+              </div>
 
               {/* MCP Servers Section */}
-              <MCPServersSection
-                isExpanded={expandedSections.has("mcp")}
-                onToggle={() => toggleSection("mcp")}
-                readOnly={isReadOnly}
-              />
+              <div ref={(el) => { sectionRefs.current["mcp"] = el; }}>
+                <MCPServersSection
+                  isExpanded={expandedSections.has("mcp")}
+                  onToggle={() => toggleSection("mcp")}
+                  readOnly={isReadOnly}
+                />
+              </div>
 
               {/* Hooks Section */}
-              <HooksSection
-                settings={effectiveSettings}
-                isExpanded={expandedSections.has("hooks")}
-                onToggle={() => toggleSection("hooks")}
-                onChange={handleSettingsChange}
-                readOnly={isReadOnly}
-              />
+              <div ref={(el) => { sectionRefs.current["hooks"] = el; }}>
+                <HooksSection
+                  settings={effectiveSettings}
+                  isExpanded={expandedSections.has("hooks")}
+                  onToggle={() => toggleSection("hooks")}
+                  onChange={handleSettingsChange}
+                  readOnly={isReadOnly}
+                />
+              </div>
 
               {/* Environment Variables Section */}
-              <EnvVarsSection
-                settings={effectiveSettings}
-                isExpanded={expandedSections.has("env")}
-                onToggle={() => toggleSection("env")}
-                onChange={handleSettingsChange}
-                readOnly={isReadOnly}
-              />
+              <div ref={(el) => { sectionRefs.current["env"] = el; }}>
+                <EnvVarsSection
+                  settings={effectiveSettings}
+                  isExpanded={expandedSections.has("env")}
+                  onToggle={() => toggleSection("env")}
+                  onChange={handleSettingsChange}
+                  readOnly={isReadOnly}
+                />
+              </div>
 
               {/* Custom Fields Section */}
-              <CustomFieldsSection
-                settings={effectiveSettings}
-                isExpanded={expandedSections.has("custom")}
-                onToggle={() => toggleSection("custom")}
-                onChange={handleSettingsChange}
-                readOnly={isReadOnly}
-              />
+              <div ref={(el) => { sectionRefs.current["custom"] = el; }}>
+                <CustomFieldsSection
+                  settings={effectiveSettings}
+                  isExpanded={expandedSections.has("custom")}
+                  onToggle={() => toggleSection("custom")}
+                  onChange={handleSettingsChange}
+                  readOnly={isReadOnly}
+                />
+              </div>
             </div>
           ) : (
             // JSON Mode
@@ -255,6 +290,11 @@ export const SettingsEditorPane: React.FC = () => {
           isSaving={isSaving}
         />
       </Card>
+
+      {/* What's Active? - Effective Settings Summary (collapsed by default) */}
+      {allSettings && (
+        <EffectiveSummaryBanner allSettings={allSettings} />
+      )}
     </main>
   );
 };

@@ -2,7 +2,11 @@
  * PresetPanel Component
  *
  * Unified preset panel for both Settings presets and MCP presets.
- * Full CRUD support with hover preview cards.
+ * Clean, explicit interaction pattern:
+ * - Hover shows "적용" (Apply) button
+ * - Click Apply = Opens confirmation dialog with scope selection
+ * - Dropdown menu for Edit/Delete
+ * - No hover previews (cleaner UX)
  */
 
 import * as React from "react";
@@ -36,11 +40,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -49,10 +48,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ChevronDown,
-  ChevronRight,
   Settings2,
   Server,
-  Save,
   Play,
   User,
   FolderOpen,
@@ -63,12 +60,10 @@ import {
   Shield,
   Key,
   MoreHorizontal,
-  Eye,
   Pencil,
   Trash2,
   FileJson,
   AlertTriangle,
-  Copy,
   Loader2,
   Check,
   Wand2,
@@ -85,6 +80,7 @@ import type {
   MCPServerConfig,
 } from "@/types";
 import { parseMCPServers, formatPresetDate, formatMCPPresetDate } from "@/types";
+import { mergeSettings } from "@/utils/settingsMerger";
 
 // ============================================================================
 // Types
@@ -164,229 +160,105 @@ function getMCPPresetSummary(preset: MCPPresetData): MCPSummary {
 }
 
 // ============================================================================
-// Preview Card Components
-// ============================================================================
-
-interface SettingsPresetPreviewProps {
-  preset: PresetData;
-}
-
-const SettingsPresetPreview: React.FC<SettingsPresetPreviewProps> = React.memo(
-  ({ preset }) => {
-    const { t } = useTranslation();
-    const summary = useMemo(() => getSettingsPresetSummary(preset), [preset]);
-
-    return (
-      <div className="space-y-3">
-        <div className="border-b border-border/50 pb-2">
-          <h4 className="font-medium text-sm">{preset.name}</h4>
-          {preset.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-              {preset.description}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Hash className="w-3 h-3" />
-            {t("settingsManager.presets.settingsCount", {
-              count: summary.totalKeys,
-            })}
-          </span>
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {formatPresetDate(preset.createdAt).split(",")[0]}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-1">
-          {summary.model && (
-            <Badge
-              variant="secondary"
-              className="text-[10px] h-5 px-1.5 font-mono"
-            >
-              <Cpu className="w-2.5 h-2.5 mr-1" />
-              {summary.model}
-            </Badge>
-          )}
-          {summary.mcpCount > 0 && (
-            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-              <Server className="w-2.5 h-2.5 mr-1" />
-              MCP: {summary.mcpCount}
-            </Badge>
-          )}
-          {summary.hasPermissions && (
-            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-              <Shield className="w-2.5 h-2.5 mr-1" />
-              {t("settingsManager.unified.sections.permissions")}
-            </Badge>
-          )}
-          {summary.hasApiKey && (
-            <Badge
-              variant="outline"
-              className="text-[10px] h-5 px-1.5 border-amber-500/50 text-amber-600"
-            >
-              <Key className="w-2.5 h-2.5 mr-1" />
-              API Key
-            </Badge>
-          )}
-        </div>
-
-        <p className="text-[10px] text-muted-foreground/70 italic">
-          {t("settingsManager.presets.clickToApply")}
-        </p>
-      </div>
-    );
-  }
-);
-
-SettingsPresetPreview.displayName = "SettingsPresetPreview";
-
-interface MCPPresetPreviewProps {
-  preset: MCPPresetData;
-}
-
-const MCPPresetPreview: React.FC<MCPPresetPreviewProps> = React.memo(
-  ({ preset }) => {
-    const { t } = useTranslation();
-    const summary = useMemo(() => getMCPPresetSummary(preset), [preset]);
-
-    return (
-      <div className="space-y-3">
-        <div className="border-b border-border/50 pb-2">
-          <h4 className="font-medium text-sm">{preset.name}</h4>
-          {preset.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-              {preset.description}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Server className="w-3 h-3" />
-            {summary.serverCount} {t("settingsManager.mcp.unified.servers")}
-          </span>
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {formatMCPPresetDate(preset.createdAt).split(",")[0]}
-          </span>
-        </div>
-
-        {summary.serverNames.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-              {t("settingsManager.mcp.servers")}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {summary.serverNames.map((name) => (
-                <Badge
-                  key={name}
-                  variant="outline"
-                  className="text-[10px] h-5 px-1.5 font-mono"
-                >
-                  {name}
-                </Badge>
-              ))}
-              {summary.serverCount > 5 && (
-                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                  +{summary.serverCount - 5}
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
-
-        <p className="text-[10px] text-muted-foreground/70 italic">
-          {t("settingsManager.presets.clickToApply")}
-        </p>
-      </div>
-    );
-  }
-);
-
-MCPPresetPreview.displayName = "MCPPresetPreview";
-
-// ============================================================================
-// Preset Item Component
+// Preset Item Component (Clean, Direct Interaction)
 // ============================================================================
 
 interface PresetItemProps {
   name: string;
+  type: "settings" | "mcp";
+  description?: string;
+  badge?: string; // e.g., "opus", "3 servers"
   isReadOnly: boolean;
   onApply: () => void;
-  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onCopyTo?: () => void;
-  children: React.ReactNode; // HoverCard content
 }
 
+/**
+ * Clean preset item with explicit apply button:
+ * - Hover shows "적용" button
+ * - Click Apply = Opens confirmation dialog
+ * - Subtle type indication via left border color
+ */
 const PresetItem: React.FC<PresetItemProps> = React.memo(
-  ({ name, isReadOnly, onApply, onView, onEdit, onDelete, onCopyTo, children }) => {
+  ({ name, type, description, badge, isReadOnly, onApply, onEdit, onDelete }) => {
     const { t } = useTranslation();
 
-    return (
-      <div className="group flex items-center gap-1">
-        <HoverCard openDelay={400} closeDelay={100}>
-          <HoverCardTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 justify-start h-7 text-xs text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors duration-150 pr-1"
-              onClick={onApply}
-            >
-              <Play className="w-3 h-3 mr-1.5 text-accent shrink-0" />
-              <span className="truncate">{name}</span>
-            </Button>
-          </HoverCardTrigger>
-          <HoverCardContent side="right" align="start" className="w-72">
-            {children}
-          </HoverCardContent>
-        </HoverCard>
+    // Type-based styling
+    const borderColor = type === "settings"
+      ? "border-l-blue-500/70"
+      : "border-l-purple-500/70";
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={onApply}>
-              <Play className="w-3.5 h-3.5 mr-2" />
-              {t("settingsManager.presets.apply")}
-            </DropdownMenuItem>
-            {onCopyTo && (
-              <DropdownMenuItem onClick={onCopyTo}>
-                <Copy className="w-3.5 h-3.5 mr-2" />
-                {t("settingsManager.presets.copyTo")}
-              </DropdownMenuItem>
+    return (
+      <div
+        className={`group relative flex items-center gap-2 px-2.5 py-1.5 rounded-md border-l-2 ${borderColor} hover:bg-muted/50 transition-colors duration-100`}
+      >
+        {/* Icon */}
+        {type === "settings" ? (
+          <Settings2 className="w-3.5 h-3.5 text-blue-500/70 shrink-0" />
+        ) : (
+          <Server className="w-3.5 h-3.5 text-purple-500/70 shrink-0" />
+        )}
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium truncate">{name}</span>
+            {badge && (
+              <span className="text-[10px] text-muted-foreground/70 font-mono shrink-0">
+                {badge}
+              </span>
             )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onView}>
-              <Eye className="w-3.5 h-3.5 mr-2" />
-              {t("settingsManager.presets.viewDetail")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onEdit} disabled={isReadOnly}>
-              <Pencil className="w-3.5 h-3.5 mr-2" />
-              {t("common.edit")}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={onDelete}
-              disabled={isReadOnly}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-2" />
-              {t("common.delete")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </div>
+          {description && (
+            <p className="text-[10px] text-muted-foreground/60 truncate">
+              {description}
+            </p>
+          )}
+        </div>
+
+        {/* Action buttons - show on hover */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+          {/* Apply button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-500/10"
+            onClick={onApply}
+          >
+            <Play className="w-3 h-3 mr-1" />
+            {t("settingsManager.presets.apply")}
+          </Button>
+
+          {/* Edit/Delete dropdown */}
+          {!isReadOnly && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                >
+                  <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Pencil className="w-3 h-3 mr-2" />
+                  {t("common.edit")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="w-3 h-3 mr-2" />
+                  {t("common.delete")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
     );
   }
@@ -401,7 +273,7 @@ PresetItem.displayName = "PresetItem";
 export const PresetPanel: React.FC = () => {
   const { t } = useTranslation();
   const {
-    currentSettings,
+    allSettings,
     saveSettings,
     isReadOnly,
     settingsPresets,
@@ -411,10 +283,6 @@ export const PresetPanel: React.FC = () => {
     activeScope,
     projectPath,
   } = useSettingsManager();
-
-  // Expand state
-  const [settingsExpanded, setSettingsExpanded] = useState(true);
-  const [mcpExpanded, setMcpExpanded] = useState(true);
 
   // Dialog state
   const [dialogMode, setDialogMode] = useState<PresetDialogMode | null>(null);
@@ -510,7 +378,14 @@ export const PresetPanel: React.FC = () => {
 
   const currentMCPServers = getCurrentMCPServers();
   const hasMCPServers = Object.keys(currentMCPServers).length > 0;
-  const hasSettings = Object.keys(currentSettings).length > 0;
+
+  // Compute effective settings (merged from all scopes) for preset saving
+  const effectiveSettings = useMemo(() => {
+    if (!allSettings) return {};
+    const merged = mergeSettings(allSettings);
+    return merged.effective;
+  }, [allSettings]);
+  const hasEffectiveSettings = Object.keys(effectiveSettings).length > 0;
 
   // ============================================================================
   // Dialog Handlers
@@ -640,10 +515,11 @@ export const PresetPanel: React.FC = () => {
     if (!formName.trim()) return;
     if (!validatePresetName(formName)) return;
 
+    // Save effective settings (merged from all scopes) instead of just current scope
     await settingsPresets.savePreset({
       name: formName.trim(),
       description: formDescription.trim() || undefined,
-      settings: JSON.stringify(currentSettings, null, 2),
+      settings: JSON.stringify(effectiveSettings, null, 2),
     });
 
     closeDialog();
@@ -765,18 +641,19 @@ export const PresetPanel: React.FC = () => {
   // Computed Values
   // ============================================================================
 
+  // Summary of effective settings (for preset creation dialog)
   const settingsSummary = useMemo(() => {
-    const keys = Object.keys(currentSettings);
+    const keys = Object.keys(effectiveSettings);
     const hasMcp =
-      "mcpServers" in currentSettings &&
-      Object.keys(currentSettings.mcpServers || {}).length > 0;
+      "mcpServers" in effectiveSettings &&
+      Object.keys(effectiveSettings.mcpServers || {}).length > 0;
 
     return {
       totalKeys: keys.length,
       isEmpty: keys.length === 0,
-      mcpCount: hasMcp ? Object.keys(currentSettings.mcpServers || {}).length : 0,
+      mcpCount: hasMcp ? Object.keys(effectiveSettings.mcpServers || {}).length : 0,
     };
-  }, [currentSettings]);
+  }, [effectiveSettings]);
 
   const selectedPresetSummary = useMemo(() => {
     if (dialogType === "settings" && selectedSettingsPreset) {
@@ -794,109 +671,81 @@ export const PresetPanel: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      {/* Settings Presets */}
-      <Collapsible open={settingsExpanded} onOpenChange={setSettingsExpanded}>
-        <CollapsibleTrigger className="flex items-center gap-2 w-full py-1.5 px-2 rounded-md text-sm text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors duration-150">
-          {settingsExpanded ? (
-            <ChevronDown className="w-3 h-3" />
-          ) : (
-            <ChevronRight className="w-3 h-3" />
-          )}
-          <Settings2 className="w-3.5 h-3.5" />
-          <span className="flex-1 text-left">
-            {t("settingsManager.unified.sidebar.settingsPresets")}
-          </span>
-          {settingsPresets.presets.length > 0 && (
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {settingsPresets.presets.length}
-            </span>
-          )}
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pl-5 space-y-0.5 mt-1">
-          {settingsPresets.presets.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-1 pl-1">
-              {t("settingsManager.presets.empty")}
-            </p>
-          ) : (
-            settingsPresets.presets.map((preset) => (
-              <PresetItem
-                key={preset.id}
-                name={preset.name}
-                isReadOnly={isReadOnly}
-                onApply={() => openDialog("apply", "settings", preset)}
-                onView={() => openDialog("view", "settings", preset)}
-                onEdit={() => openDialog("edit", "settings", preset)}
-                onDelete={() => openDialog("delete", "settings", preset)}
-              >
-                <SettingsPresetPreview preset={preset} />
-              </PresetItem>
-            ))
-          )}
-          {!isReadOnly && hasSettings && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start h-7 text-xs text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors duration-150"
-              onClick={() => openDialog("create", "settings")}
-            >
-              <Save className="w-3 h-3 mr-1.5 text-muted-foreground" />
-              {t("settingsManager.presets.saveAsPreset")}
-            </Button>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
+      {/* Unified Preset List - Settings and MCP combined */}
+      <div className="space-y-1">
+        {/* Settings Presets */}
+        {settingsPresets.presets.map((preset) => {
+          const summary = getSettingsPresetSummary(preset);
+          const badge = summary.model || (summary.mcpCount > 0 ? `MCP: ${summary.mcpCount}` : undefined);
+          return (
+            <PresetItem
+              key={`settings-${preset.id}`}
+              name={preset.name}
+              type="settings"
+              description={preset.description}
+              badge={badge}
+              isReadOnly={isReadOnly}
+              onApply={() => openDialog("apply", "settings", preset)}
+              onEdit={() => openDialog("edit", "settings", preset)}
+              onDelete={() => openDialog("delete", "settings", preset)}
+            />
+          );
+        })}
 
-      {/* MCP Presets */}
-      <Collapsible open={mcpExpanded} onOpenChange={setMcpExpanded}>
-        <CollapsibleTrigger className="flex items-center gap-2 w-full py-1.5 px-2 rounded-md text-sm text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors duration-150">
-          {mcpExpanded ? (
-            <ChevronDown className="w-3 h-3" />
-          ) : (
-            <ChevronRight className="w-3 h-3" />
-          )}
-          <Server className="w-3.5 h-3.5" />
-          <span className="flex-1 text-left">
-            {t("settingsManager.unified.sidebar.mcpPresets")}
-          </span>
-          {mcpPresets.presets.length > 0 && (
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {mcpPresets.presets.length}
-            </span>
-          )}
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pl-5 space-y-0.5 mt-1">
-          {mcpPresets.presets.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-1 pl-1">
-              {t("settingsManager.presets.empty")}
-            </p>
-          ) : (
-            mcpPresets.presets.map((preset) => (
-              <PresetItem
-                key={preset.id}
-                name={preset.name}
-                isReadOnly={isReadOnly}
-                onApply={() => openDialog("apply", "mcp", preset)}
-                onView={() => openDialog("view", "mcp", preset)}
-                onEdit={() => openDialog("edit", "mcp", preset)}
-                onDelete={() => openDialog("delete", "mcp", preset)}
+        {/* MCP Presets */}
+        {mcpPresets.presets.map((preset) => {
+          const summary = getMCPPresetSummary(preset);
+          const badge = `${summary.serverCount}`;
+          return (
+            <PresetItem
+              key={`mcp-${preset.id}`}
+              name={preset.name}
+              type="mcp"
+              description={preset.description}
+              badge={badge}
+              isReadOnly={isReadOnly}
+              onApply={() => openDialog("apply", "mcp", preset)}
+              onEdit={() => openDialog("edit", "mcp", preset)}
+              onDelete={() => openDialog("delete", "mcp", preset)}
+            />
+          );
+        })}
+
+        {/* Empty state */}
+        {settingsPresets.presets.length === 0 && mcpPresets.presets.length === 0 && (
+          <p className="text-xs text-muted-foreground py-2 text-center">
+            {t("settingsManager.presets.empty")}
+          </p>
+        )}
+
+        {/* Save buttons */}
+        {!isReadOnly && (
+          <div className="flex flex-col gap-1 pt-2 border-t border-border/30 mt-2">
+            {hasEffectiveSettings && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start h-8 text-xs text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors duration-150"
+                onClick={() => openDialog("create", "settings")}
               >
-                <MCPPresetPreview preset={preset} />
-              </PresetItem>
-            ))
-          )}
-          {!isReadOnly && hasMCPServers && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start h-7 text-xs text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors duration-150"
-              onClick={() => openDialog("create", "mcp")}
-            >
-              <Save className="w-3 h-3 mr-1.5 text-muted-foreground" />
-              {t("settingsManager.mcp.saveAsPreset")}
-            </Button>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
+                <Settings2 className="w-3.5 h-3.5 mr-2" />
+                {t("settingsManager.presets.saveSettings")}
+              </Button>
+            )}
+            {hasMCPServers && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start h-8 text-xs text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 transition-colors duration-150"
+                onClick={() => openDialog("create", "mcp")}
+              >
+                <Server className="w-3.5 h-3.5 mr-2" />
+                {t("settingsManager.presets.saveMCP")}
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ================================================================== */}
       {/* View/Edit Dialog */}
@@ -1311,7 +1160,7 @@ export const PresetPanel: React.FC = () => {
                   <CollapsibleContent>
                     <pre className="bg-muted p-3 rounded-lg text-xs overflow-auto max-h-[120px] font-mono mt-2">
                       {dialogType === "settings"
-                        ? JSON.stringify(currentSettings, null, 2)
+                        ? JSON.stringify(effectiveSettings, null, 2)
                         : JSON.stringify(currentMCPServers, null, 2)}
                     </pre>
                   </CollapsibleContent>
