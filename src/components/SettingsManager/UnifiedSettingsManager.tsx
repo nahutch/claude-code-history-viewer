@@ -102,9 +102,7 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
 
   // Sync with initial prop if it changes
   React.useEffect(() => {
-    if (initialProjectPath !== undefined) {
-      setProjectPath(initialProjectPath);
-    }
+    setProjectPath(initialProjectPath);
   }, [initialProjectPath]);
 
   // MCP servers hook

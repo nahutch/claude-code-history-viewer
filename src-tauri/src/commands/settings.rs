@@ -50,8 +50,25 @@ fn ensure_presets_folder() -> Result<PathBuf, String> {
     Ok(folder)
 }
 
+/// Validate that a preset ID contains only safe characters
+fn validate_preset_id(id: &str) -> Result<(), String> {
+    if id.is_empty() {
+        return Err("Preset ID must not be empty".to_string());
+    }
+    if !id
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(format!(
+            "Invalid preset ID '{id}': only ASCII letters, digits, '-' and '_' are allowed"
+        ));
+    }
+    Ok(())
+}
+
 /// Get the path to a preset file
 fn get_preset_path(id: &str) -> Result<PathBuf, String> {
+    validate_preset_id(id)?;
     let folder = get_presets_folder()?;
     Ok(folder.join(format!("{id}.json")))
 }

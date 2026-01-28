@@ -70,8 +70,25 @@ fn ensure_mcp_presets_folder() -> Result<PathBuf, String> {
     Ok(folder)
 }
 
+/// Validate that a preset ID contains only safe characters
+fn validate_preset_id(id: &str) -> Result<(), String> {
+    if id.is_empty() {
+        return Err("Preset ID must not be empty".to_string());
+    }
+    if !id
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(format!(
+            "Invalid preset ID '{id}': only ASCII letters, digits, '-' and '_' are allowed"
+        ));
+    }
+    Ok(())
+}
+
 /// Get the path to an MCP preset file
 fn get_mcp_preset_path(id: &str) -> Result<PathBuf, String> {
+    validate_preset_id(id)?;
     let folder = get_mcp_presets_folder()?;
     Ok(folder.join(format!("{id}.json")))
 }
@@ -139,6 +156,13 @@ pub async fn save_mcp_preset(input: MCPPresetInput) -> Result<MCPPresetData, Str
             .map_err(|e| format!("Failed to write temp file: {e}"))?;
         file.sync_all()
             .map_err(|e| format!("Failed to sync temp file: {e}"))?;
+
+        // On Windows, rename fails if destination exists; remove it first
+        #[cfg(target_os = "windows")]
+        if path.exists() {
+            fs::remove_file(&path)
+                .map_err(|e| format!("Failed to remove existing file before rename: {e}"))?;
+        }
 
         // Rename temp file to actual file (atomic on most filesystems)
         fs::rename(&temp_path, &path).map_err(|e| format!("Failed to rename temp file: {e}"))?;
