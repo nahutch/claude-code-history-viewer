@@ -432,9 +432,11 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
 
           {/* User-wide Info */}
           {contextMode === "user" && (
-            <p className="text-[10px] text-muted-foreground/70 leading-tight px-1">
-              {t("settingsManager.context.userWideDesc")}
-            </p>
+            <div className="space-y-2 px-1">
+              <p className="text-[10px] text-muted-foreground/70 leading-tight">
+                {t("settingsManager.context.userWideDesc")}
+              </p>
+            </div>
           )}
 
           {/* Managed Scope Indicator (if managed settings exist) */}

@@ -93,14 +93,15 @@ type DialogMode = "create" | "edit" | "apply" | "delete" | "duplicate";
 interface PresetItemProps {
   preset: UnifiedPresetData;
   isReadOnly: boolean;
-  onApply: () => void;
+  onApplyHere: () => void;
+  onApplyTo: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
 }
 
 const PresetItem: React.FC<PresetItemProps> = React.memo(
-  ({ preset, isReadOnly, onApply, onEdit, onDuplicate, onDelete }) => {
+  ({ preset, isReadOnly, onApplyHere, onApplyTo, onEdit, onDuplicate, onDelete }) => {
     const { t } = useTranslation();
     const { summary } = preset;
 
@@ -134,15 +135,27 @@ const PresetItem: React.FC<PresetItemProps> = React.memo(
 
         {/* Action buttons - show on hover */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-          {/* Apply button */}
+          {/* Apply Here button - primary action */}
           <Button
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-500/10"
-            onClick={onApply}
+            onClick={onApplyHere}
+            title={t("settingsManager.presets.applyHere")}
           >
-            <Play className="w-3 h-3 mr-1" />
-            {t("settingsManager.presets.apply")}
+            <Zap className="w-3 h-3 mr-1" />
+            {t("settingsManager.presets.applyHere")}
+          </Button>
+
+          {/* Apply To... button - opens scope selection */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+            onClick={onApplyTo}
+            title={t("settingsManager.presets.applyTo")}
+          >
+            <Play className="w-3 h-3" />
           </Button>
 
           {/* Edit/Delete dropdown */}
@@ -414,6 +427,47 @@ export const PresetPanel: React.FC = () => {
     closeDialog();
   };
 
+  // Apply preset directly to current scope without dialog
+  const handleApplyHere = async (preset: UnifiedPresetData) => {
+    try {
+      // Parse settings
+      let settings: ClaudeCodeSettings;
+      try {
+        settings = JSON.parse(preset.settings) as ClaudeCodeSettings;
+      } catch {
+        console.error("Failed to parse preset settings");
+        return;
+      }
+
+      // Apply settings to current scope
+      if (Object.keys(settings).length > 0) {
+        const scope = activeScope === "managed" ? "user" : activeScope;
+        await saveSettings(settings, scope, projectPath);
+      }
+
+      // Parse and apply MCP servers
+      let servers: Record<string, unknown>;
+      try {
+        servers = JSON.parse(preset.mcpServers) as Record<string, unknown>;
+      } catch {
+        console.error("Failed to parse preset MCP servers");
+        return;
+      }
+
+      if (Object.keys(servers).length > 0) {
+        const mcpSource =
+          activeScope === "user" || activeScope === "managed"
+            ? "user_claude_json"
+            : activeScope === "project"
+              ? "project_mcp"
+              : "local_claude_json";
+        await saveMCPServers(mcpSource, servers as Parameters<typeof saveMCPServers>[1], projectPath);
+      }
+    } catch (e) {
+      console.error("Failed to apply preset:", e);
+    }
+  };
+
   const handleApplyPreset = async () => {
     if (!selectedPreset) return;
     if (needsProject && !targetProject) return;
@@ -483,7 +537,8 @@ export const PresetPanel: React.FC = () => {
             key={preset.id}
             preset={preset}
             isReadOnly={isReadOnly}
-            onApply={() => openDialog("apply", preset)}
+            onApplyHere={() => handleApplyHere(preset)}
+            onApplyTo={() => openDialog("apply", preset)}
             onEdit={() => openDialog("edit", preset)}
             onDuplicate={() => openDialog("duplicate", preset)}
             onDelete={() => openDialog("delete", preset)}
