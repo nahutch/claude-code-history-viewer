@@ -15,9 +15,6 @@ use crate::commands::{
     },
     feedback::{get_system_info, open_github_issues, send_feedback},
     mcp_presets::{delete_mcp_preset, get_mcp_preset, load_mcp_presets, save_mcp_preset},
-    unified_presets::{
-        delete_unified_preset, get_unified_preset, load_unified_presets, save_unified_preset,
-    },
     metadata::{
         get_metadata_folder_path, get_session_display_name, is_project_hidden, load_user_metadata,
         save_user_metadata, update_project_metadata, update_session_metadata, update_user_settings,
@@ -32,6 +29,9 @@ use crate::commands::{
     stats::{
         get_global_stats_summary, get_project_stats_summary, get_project_token_stats,
         get_session_comparison, get_session_token_stats,
+    },
+    unified_presets::{
+        delete_unified_preset, get_unified_preset, load_unified_presets, save_unified_preset,
     },
 };
 

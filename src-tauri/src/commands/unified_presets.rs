@@ -110,44 +110,74 @@ fn compute_summary(settings_json: &str, mcp_json: &str) -> UnifiedPresetSummary 
 
     // Count settings fields
     let mut settings_count = 0;
-    if settings.get("model").is_some() { settings_count += 1; }
-    if settings.get("language").is_some() { settings_count += 1; }
-    if settings.get("permissions").is_some() { settings_count += 1; }
-    if settings.get("hooks").is_some() { settings_count += 1; }
-    if settings.get("env").is_some() { settings_count += 1; }
-    if settings.get("alwaysThinkingEnabled").is_some() { settings_count += 1; }
-    if settings.get("autoUpdatesChannel").is_some() { settings_count += 1; }
-    if settings.get("attribution").is_some() { settings_count += 1; }
+    if settings.get("model").is_some() {
+        settings_count += 1;
+    }
+    if settings.get("language").is_some() {
+        settings_count += 1;
+    }
+    if settings.get("permissions").is_some() {
+        settings_count += 1;
+    }
+    if settings.get("hooks").is_some() {
+        settings_count += 1;
+    }
+    if settings.get("env").is_some() {
+        settings_count += 1;
+    }
+    if settings.get("alwaysThinkingEnabled").is_some() {
+        settings_count += 1;
+    }
+    if settings.get("autoUpdatesChannel").is_some() {
+        settings_count += 1;
+    }
+    if settings.get("attribution").is_some() {
+        settings_count += 1;
+    }
 
     // Extract model
-    let model = settings.get("model")
+    let model = settings
+        .get("model")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
     // Count MCP servers
-    let mcp_server_names: Vec<String> = mcp.as_object()
+    let mcp_server_names: Vec<String> = mcp
+        .as_object()
         .map(|obj| obj.keys().take(5).cloned().collect())
         .unwrap_or_default();
     let mcp_server_count = mcp.as_object().map(|obj| obj.len()).unwrap_or(0);
 
     // Check for permissions
-    let has_permissions = settings.get("permissions")
+    let has_permissions = settings
+        .get("permissions")
         .and_then(|p| p.as_object())
         .map(|p| {
-            p.get("allow").and_then(|v| v.as_array()).map(|a| !a.is_empty()).unwrap_or(false) ||
-            p.get("deny").and_then(|v| v.as_array()).map(|a| !a.is_empty()).unwrap_or(false) ||
-            p.get("ask").and_then(|v| v.as_array()).map(|a| !a.is_empty()).unwrap_or(false)
+            p.get("allow")
+                .and_then(|v| v.as_array())
+                .map(|a| !a.is_empty())
+                .unwrap_or(false)
+                || p.get("deny")
+                    .and_then(|v| v.as_array())
+                    .map(|a| !a.is_empty())
+                    .unwrap_or(false)
+                || p.get("ask")
+                    .and_then(|v| v.as_array())
+                    .map(|a| !a.is_empty())
+                    .unwrap_or(false)
         })
         .unwrap_or(false);
 
     // Check for hooks
-    let has_hooks = settings.get("hooks")
+    let has_hooks = settings
+        .get("hooks")
         .and_then(|h| h.as_object())
         .map(|h| !h.is_empty())
         .unwrap_or(false);
 
     // Check for env vars
-    let has_env_vars = settings.get("env")
+    let has_env_vars = settings
+        .get("env")
         .and_then(|e| e.as_object())
         .map(|e| !e.is_empty())
         .unwrap_or(false);
@@ -182,8 +212,8 @@ pub async fn load_unified_presets() -> Result<Vec<UnifiedPresetData>, String> {
 
         let mut presets = Vec::new();
 
-        let entries = fs::read_dir(&folder)
-            .map_err(|e| format!("Failed to read presets folder: {e}"))?;
+        let entries =
+            fs::read_dir(&folder).map_err(|e| format!("Failed to read presets folder: {e}"))?;
 
         for entry in entries.flatten() {
             let path = entry.path();
@@ -218,8 +248,8 @@ pub async fn save_unified_preset(input: UnifiedPresetInput) -> Result<UnifiedPre
             // Update existing
             let path = get_preset_path(id)?;
             let existing: UnifiedPresetData = if path.exists() {
-                let content = fs::read_to_string(&path)
-                    .map_err(|e| format!("Failed to read preset: {e}"))?;
+                let content =
+                    fs::read_to_string(&path).map_err(|e| format!("Failed to read preset: {e}"))?;
                 serde_json::from_str(&content)
                     .map_err(|e| format!("Failed to parse preset: {e}"))?
             } else {
@@ -255,8 +285,8 @@ pub async fn save_unified_preset(input: UnifiedPresetInput) -> Result<UnifiedPre
         let json = serde_json::to_string_pretty(&preset)
             .map_err(|e| format!("Failed to serialize preset: {e}"))?;
 
-        let mut file = fs::File::create(&path)
-            .map_err(|e| format!("Failed to create preset file: {e}"))?;
+        let mut file =
+            fs::File::create(&path).map_err(|e| format!("Failed to create preset file: {e}"))?;
         file.write_all(json.as_bytes())
             .map_err(|e| format!("Failed to write preset file: {e}"))?;
 
@@ -274,8 +304,7 @@ pub async fn delete_unified_preset(id: String) -> Result<(), String> {
         let path = get_preset_path(&id)?;
 
         if path.exists() {
-            fs::remove_file(&path)
-                .map_err(|e| format!("Failed to delete preset: {e}"))?;
+            fs::remove_file(&path).map_err(|e| format!("Failed to delete preset: {e}"))?;
         }
 
         Ok(())
@@ -295,11 +324,11 @@ pub async fn get_unified_preset(id: String) -> Result<Option<UnifiedPresetData>,
             return Ok(None);
         }
 
-        let content = fs::read_to_string(&path)
-            .map_err(|e| format!("Failed to read preset: {e}"))?;
+        let content =
+            fs::read_to_string(&path).map_err(|e| format!("Failed to read preset: {e}"))?;
 
-        let preset: UnifiedPresetData = serde_json::from_str(&content)
-            .map_err(|e| format!("Failed to parse preset: {e}"))?;
+        let preset: UnifiedPresetData =
+            serde_json::from_str(&content).map_err(|e| format!("Failed to parse preset: {e}"))?;
 
         Ok(Some(preset))
     })
