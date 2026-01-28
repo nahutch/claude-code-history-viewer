@@ -77,7 +77,7 @@ export const SettingsEditorPane: React.FC = () => {
   }, [saveResult]);
 
   // Check if current scope has settings
-  const hasSettings = allSettings?.[activeScope] !== null;
+  const hasSettings = allSettings?.[activeScope] != null;
 
   // Get effective settings (pending or current)
   const effectiveSettings = pendingSettings ?? currentSettings;

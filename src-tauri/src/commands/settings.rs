@@ -126,17 +126,27 @@ pub async fn save_preset(input: PresetInput) -> Result<PresetData, String> {
         let path = get_preset_path(&preset_clone.id)?;
 
         // Write to temp file first (atomic write pattern)
-        let temp_path = path.with_extension("json.tmp");
         let content = serde_json::to_string_pretty(&preset_clone)
             .map_err(|e| format!("Failed to serialize preset: {e}"))?;
 
-        let mut file =
-            fs::File::create(&temp_path).map_err(|e| format!("Failed to create temp file: {e}"))?;
-        file.write_all(content.as_bytes())
+        let dir = path
+            .parent()
+            .ok_or_else(|| "Failed to get parent directory".to_string())?;
+        let mut tmp_file = tempfile::Builder::new()
+            .prefix(".preset-")
+            .suffix(".tmp")
+            .tempfile_in(dir)
+            .map_err(|e| format!("Failed to create temp file: {e}"))?;
+
+        tmp_file
+            .write_all(content.as_bytes())
             .map_err(|e| format!("Failed to write temp file: {e}"))?;
-        file.sync_all()
+        tmp_file
+            .as_file()
+            .sync_all()
             .map_err(|e| format!("Failed to sync temp file: {e}"))?;
 
+        let temp_path = tmp_file.into_temp_path();
         // Cross-platform atomic rename
         super::fs_utils::atomic_rename(&temp_path, &path)?;
 

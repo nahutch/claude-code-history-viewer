@@ -408,8 +408,13 @@ export const PresetPanel: React.FC = () => {
       mcpServers: JSON.stringify(currentMCPServers),
     };
 
-    await savePreset(input);
-    closeDialog();
+    try {
+      await savePreset(input);
+      closeDialog();
+    } catch (err) {
+      console.error("Failed to save preset:", err);
+      setApplyError(t("error.savePresetFailed", { detail: err instanceof Error ? err.message : String(err) }));
+    }
   };
 
   const handleUpdatePreset = async () => {
@@ -424,22 +429,38 @@ export const PresetPanel: React.FC = () => {
       mcpServers: selectedPreset.mcpServers,
     };
 
-    await savePreset(input);
-    closeDialog();
+    try {
+      await savePreset(input);
+      closeDialog();
+    } catch (err) {
+      console.error("Failed to update preset:", err);
+      setApplyError(t("error.updatePresetFailed", { detail: err instanceof Error ? err.message : String(err) }));
+    }
   };
 
   const handleDuplicatePreset = async () => {
     if (!formName.trim() || !selectedPreset) return;
     if (!validatePresetName(formName)) return;
 
-    await duplicatePreset(selectedPreset.id, formName.trim());
-    closeDialog();
+    try {
+      await duplicatePreset(selectedPreset.id, formName.trim());
+      closeDialog();
+    } catch (err) {
+      console.error("Failed to duplicate preset:", err);
+      setApplyError(t("error.duplicatePresetFailed", { detail: err instanceof Error ? err.message : String(err) }));
+    }
   };
 
   const handleDeletePreset = async () => {
     if (!selectedPreset) return;
-    await deletePreset(selectedPreset.id);
-    closeDialog();
+
+    try {
+      await deletePreset(selectedPreset.id);
+      closeDialog();
+    } catch (err) {
+      console.error("Failed to delete preset:", err);
+      setApplyError(t("error.deletePresetFailed", { detail: err instanceof Error ? err.message : String(err) }));
+    }
   };
 
   // Apply preset directly to current scope without dialog
@@ -488,7 +509,7 @@ export const PresetPanel: React.FC = () => {
     } catch (e) {
       const errorMsg = `Failed to apply preset "${preset.name}": ${e instanceof Error ? e.message : String(e)}`;
       console.error(errorMsg);
-      setApplyError(t("error.applyPresetFailed") || errorMsg);
+      setApplyError(t("error.applyPresetFailed", { detail: e instanceof Error ? e.message : String(e) }));
     }
   };
 
@@ -548,7 +569,9 @@ export const PresetPanel: React.FC = () => {
         closeDialog();
       }, 1000);
     } catch (e) {
-      console.error("Failed to apply preset:", e);
+      const errorMsg = `Failed to apply preset "${selectedPreset.name}": ${e instanceof Error ? e.message : String(e)}`;
+      console.error(errorMsg);
+      setApplyError(t("error.applyPresetFailed", { detail: e instanceof Error ? e.message : String(e) }));
       setIsApplying(false);
     }
   };

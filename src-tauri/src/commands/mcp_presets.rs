@@ -203,8 +203,16 @@ pub async fn load_mcp_presets() -> Result<Vec<MCPPresetData>, String> {
                 continue;
             }
 
-            let content =
-                fs::read_to_string(&path).map_err(|e| format!("Failed to read MCP preset: {e}"))?;
+            let content = match fs::read_to_string(&path) {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!(
+                        "Warning: Failed to read MCP preset at {}: {e}",
+                        path.display()
+                    );
+                    continue;
+                }
+            };
 
             match serde_json::from_str::<MCPPresetData>(&content) {
                 Ok(preset) => presets.push(preset),
