@@ -399,9 +399,9 @@ pub async fn get_all_mcp_servers(project_path: Option<String>) -> Result<AllMCPS
 /// Save MCP servers to a specific source
 ///
 /// # Arguments
-/// * `source` - One of: "user_settings", "user_mcp", "project_mcp", "user_claude_json", "local_claude_json"
+/// * `source` - One of: `user_settings`, `user_mcp`, `project_mcp`, `user_claude_json`, `local_claude_json`
 /// * `servers` - JSON string of MCP servers object
-/// * `project_path` - Required for "project_mcp" and "local_claude_json" sources
+/// * `project_path` - Required for `project_mcp` and `local_claude_json` sources
 #[tauri::command]
 pub async fn save_mcp_servers(
     source: String,
@@ -518,7 +518,7 @@ pub struct ClaudeJsonConfig {
 /// * `project_path` - Optional project path to extract project-specific settings
 ///
 /// # Returns
-/// ClaudeJsonConfig with raw JSON and extracted fields
+/// `ClaudeJsonConfig` with raw JSON and extracted fields
 #[tauri::command]
 pub async fn get_claude_json_config(
     project_path: Option<String>,
