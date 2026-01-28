@@ -15,8 +15,6 @@ import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading";
 import { RefreshCw } from "lucide-react";
 import { useMCPServers } from "@/hooks/useMCPServers";
-import { usePresets } from "@/hooks/usePresets";
-import { useMCPPresets } from "@/hooks/useMCPPresets";
 import type {
   AllSettingsResponse,
   SettingsScope,
@@ -61,16 +59,9 @@ export interface SettingsManagerContextValue {
   };
   saveMCPServers: (source: MCPSource, servers: Record<string, MCPServerConfig>, targetProjectPath?: string) => Promise<void>;
 
-  // Presets state
-  settingsPresets: ReturnType<typeof usePresets>;
-  mcpPresets: ReturnType<typeof useMCPPresets>;
-
   // Actions
   loadSettings: () => Promise<void>;
   saveSettings: (settings: ClaudeCodeSettings, targetScope?: SettingsScope, targetProjectPath?: string) => Promise<void>;
-
-  // Section navigation
-  onSectionJump?: (sectionId: string) => void;
 }
 
 // Create context
@@ -115,10 +106,6 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
       setProjectPath(initialProjectPath);
     }
   }, [initialProjectPath]);
-
-  // Presets hooks
-  const settingsPresets = usePresets();
-  const mcpPresets = useMCPPresets();
 
   // MCP servers hook
   const {
@@ -213,8 +200,6 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
         projectMcpFile: mcpProjectMcpFile,
       },
       saveMCPServers,
-      settingsPresets,
-      mcpPresets,
       loadSettings,
       saveSettings,
     }),
@@ -232,8 +217,6 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
       mcpUserMcpFile,
       mcpProjectMcpFile,
       saveMCPServers,
-      settingsPresets,
-      mcpPresets,
       loadSettings,
       saveSettings,
     ]

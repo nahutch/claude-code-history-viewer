@@ -1,8 +1,10 @@
 pub mod claude_settings;
 pub mod feedback;
+pub mod mcp_presets;
 pub mod metadata;
 pub mod project;
 pub mod session;
+pub mod settings;
 pub mod stats;
 pub mod unified_presets;
 

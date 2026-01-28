@@ -114,6 +114,7 @@ export interface UseAnalyticsReturn {
     switchToTokenStats: () => Promise<void>;
     switchToAnalytics: () => Promise<void>;
     switchToRecentEdits: () => Promise<void>;
+    switchToSettings: () => void;
     refreshAnalytics: () => Promise<void>;
     clearAll: () => void;
   };
