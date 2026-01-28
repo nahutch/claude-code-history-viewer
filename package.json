@@ -104,7 +104,7 @@
       "eslint"
     ],
     "src-tauri/src/**/*.rs": [
-      "bash -c 'cd src-tauri && cargo fmt -- --check'"
+      "bash -c 'cd src-tauri && cargo fmt -- --check && cargo clippy --all-targets --all-features -- -D warnings'"
     ]
   }
 }

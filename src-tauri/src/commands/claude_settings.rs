@@ -660,7 +660,7 @@ mod tests {
         // Recover from poisoned mutex (happens when previous test panicked)
         let guard = TEST_ENV_MUTEX
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let temp_dir = TempDir::new().unwrap();
         env::set_var("HOME", temp_dir.path());
         (guard, temp_dir)
