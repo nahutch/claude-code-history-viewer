@@ -77,13 +77,17 @@ fn validate_project_path(path: &str) -> Result<PathBuf, String> {
     }
 
     // Check for path traversal
-    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+    if path
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
         return Err("Project path cannot contain '..' components".to_string());
     }
 
     // Canonicalize if exists, otherwise return as-is
     if path.exists() {
-        path.canonicalize().map_err(|e| format!("Failed to canonicalize path: {}", e))
+        path.canonicalize()
+            .map_err(|e| format!("Failed to canonicalize path: {}", e))
     } else {
         Ok(path)
     }
@@ -322,14 +326,16 @@ pub async fn get_all_mcp_servers(project_path: Option<String>) -> Result<AllMCPS
                 return None;
             }
             read_settings_file(&p).ok().and_then(|content| {
-                serde_json::from_str::<serde_json::Value>(&content).ok().map(|json| {
-                    // Check if it has mcpServers key or is servers directly
-                    if let Some(servers) = json.get("mcpServers") {
-                        servers.clone()
-                    } else {
-                        json
-                    }
-                })
+                serde_json::from_str::<serde_json::Value>(&content)
+                    .ok()
+                    .map(|json| {
+                        // Check if it has mcpServers key or is servers directly
+                        if let Some(servers) = json.get("mcpServers") {
+                            servers.clone()
+                        } else {
+                            json
+                        }
+                    })
             })
         });
 
@@ -340,14 +346,16 @@ pub async fn get_all_mcp_servers(project_path: Option<String>) -> Result<AllMCPS
                 return None;
             }
             read_settings_file(&p).ok().and_then(|content| {
-                serde_json::from_str::<serde_json::Value>(&content).ok().map(|json| {
-                    // Check if it has mcpServers key or is servers directly
-                    if let Some(servers) = json.get("mcpServers") {
-                        servers.clone()
-                    } else {
-                        json
-                    }
-                })
+                serde_json::from_str::<serde_json::Value>(&content)
+                    .ok()
+                    .map(|json| {
+                        // Check if it has mcpServers key or is servers directly
+                        if let Some(servers) = json.get("mcpServers") {
+                            servers.clone()
+                        } else {
+                            json
+                        }
+                    })
             })
         });
 
@@ -362,7 +370,9 @@ pub async fn get_all_mcp_servers(project_path: Option<String>) -> Result<AllMCPS
         });
 
         // User-scoped MCP from ~/.claude.json → mcpServers
-        let user_claude_json = claude_json.as_ref().and_then(|json| json.get("mcpServers").cloned());
+        let user_claude_json = claude_json
+            .as_ref()
+            .and_then(|json| json.get("mcpServers").cloned());
 
         // Local/Project-scoped MCP from ~/.claude.json → projects.<path>.mcpServers
         let local_claude_json = project_path.as_deref().and_then(|pp| {
@@ -398,8 +408,8 @@ pub async fn save_mcp_servers(
     project_path: Option<String>,
 ) -> Result<(), String> {
     // Validate servers JSON
-    let servers_value: serde_json::Value = serde_json::from_str(&servers)
-        .map_err(|e| format!("Invalid MCP servers JSON: {e}"))?;
+    let servers_value: serde_json::Value =
+        serde_json::from_str(&servers).map_err(|e| format!("Invalid MCP servers JSON: {e}"))?;
 
     tauri::async_runtime::spawn_blocking(move || {
         match source.as_str() {
@@ -454,7 +464,8 @@ pub async fn save_mcp_servers(
             }
             "local_claude_json" => {
                 // Update projects.<path>.mcpServers in ~/.claude.json (official)
-                let pp = project_path.ok_or("project_path required for local_claude_json source")?;
+                let pp =
+                    project_path.ok_or("project_path required for local_claude_json source")?;
                 let path = get_claude_json_path()?;
                 let mut claude_json: serde_json::Value = if path.exists() {
                     let content = read_settings_file(&path)?;
@@ -705,7 +716,11 @@ mod tests {
     #[test]
     fn test_atomic_write_creates_dirs() {
         let (_guard, temp) = setup_test_env();
-        let nested_path = temp.path().join("deep").join("nested").join("settings.json");
+        let nested_path = temp
+            .path()
+            .join("deep")
+            .join("nested")
+            .join("settings.json");
         let content = r#"{"test":true}"#;
 
         write_settings_file(&nested_path, content).unwrap();
