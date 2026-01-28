@@ -186,10 +186,13 @@ export const usePresets = (): UsePresetsResult => {
 
 /**
  * Hook for preset selection state
+ *
+ * @param getPreset - Function to fetch a preset by ID (from usePresets hook)
  */
-export const usePresetSelection = () => {
+export const usePresetSelection = (
+  getPreset: (id: string) => Promise<PresetData | null>
+) => {
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
-  const { getPreset } = usePresets();
   const [selectedPreset, setSelectedPreset] = useState<PresetData | null>(null);
 
   const selectPreset = useCallback(

@@ -98,6 +98,7 @@ const EnvVarCard: React.FC<EnvVarCardProps> = React.memo(({
                 size="sm"
                 className="h-5 w-5 p-0"
                 onClick={() => setShowValue(!showValue)}
+                aria-label={showValue ? t("common.hide") : t("common.show")}
               >
                 {showValue ? (
                   <EyeOff className="w-3 h-3" />
@@ -138,6 +139,7 @@ const EnvVarCard: React.FC<EnvVarCardProps> = React.memo(({
                 size="sm"
                 className="h-6 w-6 p-0"
                 onClick={() => setIsDeleteConfirm(true)}
+                aria-label={t("common.delete")}
               >
                 <Trash2 className="w-3 h-3" />
               </Button>

@@ -151,10 +151,10 @@ const ServerRow: React.FC<ServerRowProps> = React.memo(({
           />
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleSave}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleSave} aria-label={t("common.save")}>
             <Check className="w-4 h-4 text-green-600" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleCancel}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleCancel} aria-label={t("common.cancel")}>
             <X className="w-4 h-4 text-muted-foreground" />
           </Button>
         </div>
@@ -179,6 +179,7 @@ const ServerRow: React.FC<ServerRowProps> = React.memo(({
             size="sm"
             className="h-6 w-6 p-0"
             onClick={() => setIsEditing(true)}
+            aria-label={t("common.edit")}
           >
             <Pencil className="w-3 h-3" />
           </Button>
@@ -187,6 +188,7 @@ const ServerRow: React.FC<ServerRowProps> = React.memo(({
             size="sm"
             className="h-6 w-6 p-0 text-destructive hover:text-destructive"
             onClick={onDelete}
+            aria-label={t("common.delete")}
           >
             <Trash2 className="w-3 h-3" />
           </Button>

@@ -214,7 +214,7 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
 
     // Handle select value change
     const handleSelectChange = useCallback(
-      async (value: string) => {
+      (value: string) => {
         if (value === "__user_wide__") {
           // Switch to user-wide context
           withUnsavedCheck(() => {
@@ -226,17 +226,13 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
           const project = projects.find((p) => p.actual_path === value);
           if (!project) return;
 
-          const action = async () => {
-            setProjectPath(project.actual_path);
-
+          const action = () => {
             // Update recent projects
             addRecentProject(project.actual_path, project.name);
             setRecentProjects(getRecentProjects());
 
-            // Load settings for new project
-            await loadSettings();
-
-            // Set scope based on private toggle
+            // Set path and scope - loadSettings will be triggered by useEffect
+            setProjectPath(project.actual_path);
             setActiveScope(isPrivate ? "local" : "project");
           };
 
@@ -247,21 +243,30 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
         projects,
         withUnsavedCheck,
         setProjectPath,
-        loadSettings,
         setActiveScope,
         isPrivate,
       ]
     );
 
+    // Reload settings when project path changes
+    React.useEffect(() => {
+      if (projectPath) {
+        loadSettings();
+      }
+    }, [projectPath, loadSettings]);
+
     // Toggle private/shared
     const togglePrivate = useCallback(
       (checked: boolean) => {
-        setIsPrivate(checked);
         if (projectPath) {
-          // If we have a project, switch scope
+          // If we have a project, wrap the state change in unsaved check
           withUnsavedCheck(() => {
+            setIsPrivate(checked);
             setActiveScope(checked ? "local" : "project");
           });
+        } else {
+          // No project selected, just update local toggle state
+          setIsPrivate(checked);
         }
       },
       [projectPath, withUnsavedCheck, setActiveScope]

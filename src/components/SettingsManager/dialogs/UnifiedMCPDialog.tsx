@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { AlertTriangle, ExternalLink, Server } from "lucide-react";
+import { maskValue } from "@/utils/securityUtils";
 import { useSettingsManager } from "../UnifiedSettingsManager";
 import type { MCPServerConfig, MCPSource, SettingsScope } from "@/types";
 
@@ -142,11 +143,6 @@ export const UnifiedMCPDialog: React.FC<UnifiedMCPDialogProps> = ({
     const scope = sourceToScope[source];
     setActiveScope(scope);
     onOpenChange(false);
-  };
-
-  const maskValue = (value: string): string => {
-    if (value.length <= 8) return String.fromCharCode(8226).repeat(8);
-    return value.slice(0, 4) + String.fromCharCode(8226).repeat(4) + value.slice(-4);
   };
 
   return (

@@ -429,35 +429,38 @@ export const PresetPanel: React.FC = () => {
 
   // Apply preset directly to current scope without dialog
   const handleApplyHere = async (preset: UnifiedPresetData) => {
-    try {
-      // Parse settings
-      let settings: ClaudeCodeSettings;
-      try {
-        settings = JSON.parse(preset.settings) as ClaudeCodeSettings;
-      } catch (parseError) {
-        const errorMsg = `Failed to parse preset settings for "${preset.name}": ${parseError instanceof Error ? parseError.message : String(parseError)}`;
-        console.error(errorMsg);
-        alert(t("error.invalidPresetSettings") || errorMsg);
-        return;
-      }
+    // 1. Parse both settings and MCP servers FIRST (no side effects)
+    let settings: ClaudeCodeSettings;
+    let servers: Record<string, unknown>;
 
-      // Apply settings to current scope
+    try {
+      settings = JSON.parse(preset.settings) as ClaudeCodeSettings;
+    } catch (parseError) {
+      const errorMsg = `Failed to parse preset settings for "${preset.name}": ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+      console.error(errorMsg);
+      alert(t("error.invalidPresetSettings") || errorMsg);
+      return;
+    }
+
+    try {
+      servers = JSON.parse(preset.mcpServers) as Record<string, unknown>;
+    } catch (parseError) {
+      const errorMsg = `Failed to parse preset MCP servers for "${preset.name}": ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+      console.error(errorMsg);
+      alert(t("error.invalidPresetMcpServers") || errorMsg);
+      return;
+    }
+
+    // 2. Now apply both (safe to proceed since parsing succeeded)
+    try {
+      const scope = activeScope === "managed" ? "user" : activeScope;
+
+      // Apply settings
       if (Object.keys(settings).length > 0) {
-        const scope = activeScope === "managed" ? "user" : activeScope;
         await saveSettings(settings, scope, projectPath);
       }
 
-      // Parse and apply MCP servers
-      let servers: Record<string, unknown>;
-      try {
-        servers = JSON.parse(preset.mcpServers) as Record<string, unknown>;
-      } catch (parseError) {
-        const errorMsg = `Failed to parse preset MCP servers for "${preset.name}": ${parseError instanceof Error ? parseError.message : String(parseError)}`;
-        console.error(errorMsg);
-        alert(t("error.invalidPresetMcpServers") || errorMsg);
-        return;
-      }
-
+      // Apply MCP servers
       if (Object.keys(servers).length > 0) {
         const mcpSource =
           activeScope === "user" || activeScope === "managed"
