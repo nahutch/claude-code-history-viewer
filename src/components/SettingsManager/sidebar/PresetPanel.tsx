@@ -787,7 +787,7 @@ export const PresetPanel: React.FC = () => {
                 {selectedPreset.summary.settingsCount > 0 && (
                   <Badge variant="secondary" className="text-xs">
                     <Cpu className="w-3 h-3 mr-1" />
-                    {selectedPreset.summary.settingsCount} settings
+                    {selectedPreset.summary.settingsCount} {t("settingsManager.presets.summary.settings")}
                   </Badge>
                 )}
                 {selectedPreset.summary.model && (
@@ -798,19 +798,19 @@ export const PresetPanel: React.FC = () => {
                 {selectedPreset.summary.mcpServerCount > 0 && (
                   <Badge variant="secondary" className="text-xs">
                     <Server className="w-3 h-3 mr-1" />
-                    {selectedPreset.summary.mcpServerCount} MCP
+                    {selectedPreset.summary.mcpServerCount} {t("settingsManager.presets.summary.mcpServers")}
                   </Badge>
                 )}
                 {selectedPreset.summary.hasPermissions && (
                   <Badge variant="secondary" className="text-xs">
                     <Shield className="w-3 h-3 mr-1" />
-                    Permissions
+                    {t("settingsManager.presets.summary.permissions")}
                   </Badge>
                 )}
                 {selectedPreset.summary.hasHooks && (
                   <Badge variant="secondary" className="text-xs">
                     <Zap className="w-3 h-3 mr-1" />
-                    Hooks
+                    {t("settingsManager.presets.summary.hooks")}
                   </Badge>
                 )}
               </div>

@@ -6,7 +6,7 @@
  */
 
 import * as React from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Collapsible,
@@ -165,6 +165,7 @@ export const EnvVarsSection: React.FC<EnvVarsSectionProps> = React.memo(({
   readOnly,
 }) => {
   const { t } = useTranslation();
+  const instanceId = useId();
 
   // Dialog state
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -271,22 +272,22 @@ export const EnvVarsSection: React.FC<EnvVarsSectionProps> = React.memo(({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="env-key">{t("settingsManager.unified.env.key")}</Label>
+              <Label htmlFor={`${instanceId}-env-key`}>{t("settingsManager.unified.env.key")}</Label>
               <Input
-                id="env-key"
+                id={`${instanceId}-env-key`}
                 value={newKey}
                 onChange={(e) => setNewKey(e.target.value)}
-                placeholder="MY_ENV_VAR"
+                placeholder={t("settingsManager.unified.env.keyPlaceholder")}
                 className="mt-1 font-mono"
               />
             </div>
             <div>
-              <Label htmlFor="env-value">{t("settingsManager.unified.env.value")}</Label>
+              <Label htmlFor={`${instanceId}-env-value`}>{t("settingsManager.unified.env.value")}</Label>
               <Input
-                id="env-value"
+                id={`${instanceId}-env-value`}
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
-                placeholder="value"
+                placeholder={t("settingsManager.unified.env.valuePlaceholder")}
                 type="password"
                 className="mt-1"
               />

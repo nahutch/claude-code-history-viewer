@@ -90,10 +90,14 @@ function getRecentProjects(): RecentProject[] {
 function addRecentProject(path: string, name: string): void {
   const recent = getRecentProjects().filter((p) => p.path !== path);
   recent.unshift({ path, name, lastUsed: Date.now() });
-  localStorage.setItem(
-    RECENT_PROJECTS_KEY,
-    JSON.stringify(recent.slice(0, MAX_RECENT_PROJECTS))
-  );
+  try {
+    localStorage.setItem(
+      RECENT_PROJECTS_KEY,
+      JSON.stringify(recent.slice(0, MAX_RECENT_PROJECTS))
+    );
+  } catch (error) {
+    console.warn("Failed to persist recent projects:", error);
+  }
 }
 
 // ============================================================================
@@ -310,7 +314,7 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
                     <>
                       <Globe className="w-4 h-4 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        {t("settingsManager.context.userWide")}
+                        {t("settings.context.userWide")}
                       </span>
                     </>
                   )}
@@ -365,7 +369,7 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
                 <SelectItem value="__user_wide__">
                   <div className="flex items-center gap-2">
                     <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>{t("settingsManager.context.userWide")}</span>
+                    <span>{t("settings.context.userWide")}</span>
                   </div>
                 </SelectItem>
               </SelectGroup>
@@ -431,7 +435,7 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
           {contextMode === "user" && (
             <div className="space-y-2 px-1">
               <p className="text-[10px] text-muted-foreground/70 leading-tight">
-                {t("settingsManager.context.userWideDesc")}
+                {t("settings.context.userWideDesc")}
               </p>
             </div>
           )}
