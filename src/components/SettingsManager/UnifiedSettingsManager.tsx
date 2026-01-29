@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, FolderTree } from "lucide-react";
 import { useMCPServers } from "@/hooks/useMCPServers";
 import type {
   AllSettingsResponse,
@@ -24,6 +24,9 @@ import type {
 } from "@/types";
 import { SettingsSidebar } from "./sidebar/SettingsSidebar";
 import { SettingsEditorPane } from "./editor/SettingsEditorPane";
+import { SettingsDiagnosticsPanel } from "./dialogs/SettingsDiagnosticsPanel";
+
+export type ActivePanel = "editor" | "diagnostics";
 
 // ============================================================================
 // Types
@@ -43,6 +46,10 @@ export interface SettingsManagerContextValue {
   isReadOnly: boolean;
   projectPath?: string;
   setProjectPath: (path: string | undefined) => void;
+
+  // Panel state
+  activePanel: ActivePanel;
+  setActivePanel: (panel: ActivePanel) => void;
 
   // Pending changes state (for dirty tracking across components)
   pendingSettings: ClaudeCodeSettings | null;
@@ -96,6 +103,9 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
 
   // Project path state - allows changing project within the component
   const [projectPath, setProjectPath] = React.useState<string | undefined>(initialProjectPath);
+
+  // Panel state
+  const [activePanel, setActivePanel] = React.useState<ActivePanel>("editor");
 
   // Pending changes state (shared across components for dirty tracking)
   const [pendingSettings, setPendingSettings] = React.useState<ClaudeCodeSettings | null>(null);
@@ -187,6 +197,8 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
       isReadOnly,
       projectPath,
       setProjectPath,
+      activePanel,
+      setActivePanel,
       pendingSettings,
       setPendingSettings,
       hasUnsavedChanges,
@@ -207,6 +219,7 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
       currentSettings,
       isReadOnly,
       projectPath,
+      activePanel,
       pendingSettings,
       hasUnsavedChanges,
       mcpUserClaudeJson,
@@ -240,6 +253,14 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
         <div className="flex items-center justify-between mb-4 shrink-0">
           <h2 className="text-xl font-semibold">{t("settingsManager.title")}</h2>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActivePanel(activePanel === "diagnostics" ? "editor" : "diagnostics")}
+            >
+              <FolderTree className="h-4 w-4 mr-2" />
+              {t("settingsManager.diagnostics.button")}
+            </Button>
             <Button variant="ghost" size="sm" onClick={loadSettings}>
               <RefreshCw className="h-4 w-4 mr-2" />
               {t("common.refresh")}
@@ -265,8 +286,8 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
             {/* Left Sidebar */}
             <SettingsSidebar availableScopes={availableScopes} />
 
-            {/* Main Editor Area */}
-            <SettingsEditorPane />
+            {/* Main Content Area */}
+            {activePanel === "editor" ? <SettingsEditorPane /> : <SettingsDiagnosticsPanel />}
           </div>
         )}
       </div>

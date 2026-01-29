@@ -28,10 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Upload, FolderTree } from "lucide-react";
+import { Download, Upload, AlertCircle } from "lucide-react";
 import { useSettingsManager } from "../UnifiedSettingsManager";
-import { SettingsAnalyzerDialog } from "../dialogs/SettingsAnalyzerDialog";
 import type { ClaudeCodeSettings, SettingsScope } from "@/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // ============================================================================
 // Component
@@ -44,12 +44,13 @@ export const ActionPanel: React.FC = () => {
   // State
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isAnalyzerOpen, setIsAnalyzerOpen] = useState(false);
   const [excludeSensitive, setExcludeSensitive] = useState(true);
   const [importScope, setImportScope] = useState<SettingsScope>("user");
   const [importedSettings, setImportedSettings] = useState<ClaudeCodeSettings | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   // Get settings for export
   const getExportSettings = (): ClaudeCodeSettings => {
@@ -94,13 +95,14 @@ export const ActionPanel: React.FC = () => {
   };
 
   // Check if current scope has settings
-  const hasSettings = allSettings?.[activeScope] !== null;
+  const hasSettings = allSettings?.[activeScope] != null;
 
   // Handle export
   const handleExport = async () => {
     if (!hasSettings) return;
 
     setIsExporting(true);
+    setExportError(null);
     try {
       const currentSettings = getExportSettings();
       const settingsToExport = excludeSensitive
@@ -121,6 +123,7 @@ export const ActionPanel: React.FC = () => {
       }
     } catch (error) {
       console.error("Export failed:", error);
+      setExportError(String(error));
     } finally {
       setIsExporting(false);
     }
@@ -141,10 +144,13 @@ export const ActionPanel: React.FC = () => {
         });
         const parsed = JSON.parse(content) as ClaudeCodeSettings;
         setImportedSettings(parsed);
+        setImportError(null);
         setIsImportOpen(true);
       }
     } catch (error) {
       console.error("Import failed:", error);
+      setImportError(String(error));
+      setIsImportOpen(true);
     } finally {
       setIsImporting(false);
     }
@@ -154,6 +160,7 @@ export const ActionPanel: React.FC = () => {
   const handleApplyImport = async () => {
     if (!importedSettings) return;
 
+    setImportError(null);
     try {
       await invoke("save_settings", {
         scope: importScope,
@@ -166,6 +173,7 @@ export const ActionPanel: React.FC = () => {
       setImportedSettings(null);
     } catch (error) {
       console.error("Apply import failed:", error);
+      setImportError(String(error));
     }
   };
 
@@ -197,23 +205,6 @@ export const ActionPanel: React.FC = () => {
           : t("settingsManager.exportImport.import")}
       </Button>
 
-      {/* Settings Analyzer Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start h-8 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors duration-150"
-        onClick={() => setIsAnalyzerOpen(true)}
-      >
-        <FolderTree className="w-4 h-4 mr-2 text-muted-foreground" />
-        {t("settingsManager.analyzer.button")}
-      </Button>
-
-      {/* Settings Analyzer Dialog */}
-      <SettingsAnalyzerDialog
-        open={isAnalyzerOpen}
-        onOpenChange={setIsAnalyzerOpen}
-      />
-
       {/* Export Dialog */}
       <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
         <DialogContent className="max-w-sm">
@@ -243,6 +234,12 @@ export const ActionPanel: React.FC = () => {
               </Label>
             </div>
           </div>
+          {exportError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">{exportError}</AlertDescription>
+            </Alert>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsExportOpen(false)}>
               {t("common.cancel")}
@@ -279,10 +276,10 @@ export const ActionPanel: React.FC = () => {
                   <SelectItem value="user">
                     {t("settingsManager.scope.user")}
                   </SelectItem>
-                  <SelectItem value="project">
+                  <SelectItem value="project" disabled={!projectPath}>
                     {t("settingsManager.scope.project")}
                   </SelectItem>
-                  <SelectItem value="local">
+                  <SelectItem value="local" disabled={!projectPath}>
                     {t("settingsManager.scope.local")}
                   </SelectItem>
                 </SelectContent>
@@ -295,11 +292,17 @@ export const ActionPanel: React.FC = () => {
               </pre>
             </div>
           </div>
+          {importError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">{importError}</AlertDescription>
+            </Alert>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsImportOpen(false)}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={handleApplyImport}>
+            <Button onClick={handleApplyImport} disabled={!importedSettings}>
               {t("settingsManager.exportImport.apply")}
             </Button>
           </DialogFooter>

@@ -4,14 +4,14 @@
  * Analyzes and visualizes the user's Claude Code settings distribution
  * across multiple configuration files. Provides:
  * - Visual overview of where settings are stored
- * - Best practice recommendations
+ * - Best practice recommendations with live data comparison
  * - Full backup preset creation
  *
  * Design: Editorial/Magazine style with clear visual hierarchy
  */
 
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,10 +42,13 @@ import {
   Package,
   Info,
   ExternalLink,
+  XCircle,
 } from "lucide-react";
 import { useSettingsManager } from "../UnifiedSettingsManager";
 import { useUnifiedPresets } from "@/hooks/useUnifiedPresets";
 import { mergeSettings } from "@/utils/settingsMerger";
+import { detectSettingsIssues } from "@/utils/settingsIssueDetector";
+import type { SettingsIssue, IssueSeverity } from "@/utils/settingsIssueDetector";
 import type { ClaudeCodeSettings, MCPServerConfig, UnifiedPresetInput } from "@/types";
 
 // ============================================================================
@@ -69,35 +72,37 @@ interface FileAnalysis {
   model?: string;
 }
 
+type SaveResult = {
+  type: "success" | "error";
+  message: string;
+} | null;
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const SCOPE_COLORS: Record<string, string> = {
+  global: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  user: "bg-blue-500/10 text-blue-600 border-blue-500/30",
+  project: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  local: "bg-purple-500/10 text-purple-600 border-purple-500/30",
+};
+
 // ============================================================================
 // Helper Components
 // ============================================================================
 
-const FileCard: React.FC<{
+const FileCard = React.memo<{
   analysis: FileAnalysis;
   isHighlighted?: boolean;
-}> = ({ analysis, isHighlighted }) => {
+}>(({ analysis, isHighlighted }) => {
   const { t } = useTranslation();
-
-  const scopeColors: Record<string, string> = {
-    global: "bg-amber-500/10 text-amber-600 border-amber-500/30",
-    user: "bg-blue-500/10 text-blue-600 border-blue-500/30",
-    project: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
-    local: "bg-purple-500/10 text-purple-600 border-purple-500/30",
-  };
-
-  const scopeLabels: Record<string, string> = {
-    global: t("settingsManager.analyzer.scope.global"),
-    user: t("settingsManager.analyzer.scope.user"),
-    project: t("settingsManager.analyzer.scope.project"),
-    local: t("settingsManager.analyzer.scope.local"),
-  };
 
   if (!analysis.exists) {
     return (
       <div className="relative p-3 rounded-lg border border-dashed border-border/50 bg-muted/20 opacity-50">
         <div className="flex items-start gap-3">
-          <FileJson className="w-4 h-4 text-muted-foreground/50 mt-0.5 shrink-0" />
+          <FileJson aria-hidden className="w-4 h-4 text-muted-foreground/50 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
             <code className="text-xs text-muted-foreground/60 font-mono break-all">
               {analysis.path}
@@ -122,13 +127,13 @@ const FileCard: React.FC<{
       {/* Scope Badge */}
       <Badge
         variant="outline"
-        className={`absolute -top-2 right-3 text-[9px] px-1.5 py-0 ${scopeColors[analysis.scope]}`}
+        className={`absolute -top-2 right-3 text-[9px] px-1.5 py-0 ${SCOPE_COLORS[analysis.scope]}`}
       >
-        {scopeLabels[analysis.scope]}
+        {t(`settingsManager.analyzer.scope.${analysis.scope}`)}
       </Badge>
 
       <div className="flex items-start gap-3">
-        <FileJson className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+        <FileJson aria-hidden className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <code className="text-xs text-foreground/80 font-mono break-all">
             {analysis.path}
@@ -143,7 +148,7 @@ const FileCard: React.FC<{
             )}
             {analysis.mcpCount > 0 && (
               <Badge variant="secondary" className="text-[10px] h-5">
-                <Server className="w-2.5 h-2.5 mr-1" />
+                <Server aria-hidden className="w-2.5 h-2.5 mr-1" />
                 {analysis.mcpCount} MCP
               </Badge>
             )}
@@ -154,13 +159,13 @@ const FileCard: React.FC<{
             )}
             {analysis.hasPermissions && (
               <Badge variant="secondary" className="text-[10px] h-5">
-                <Shield className="w-2.5 h-2.5 mr-1" />
+                <Shield aria-hidden className="w-2.5 h-2.5 mr-1" />
                 {t("settingsManager.analyzer.permissions")}
               </Badge>
             )}
             {analysis.hasHooks && (
               <Badge variant="secondary" className="text-[10px] h-5">
-                <Zap className="w-2.5 h-2.5 mr-1" />
+                <Zap aria-hidden className="w-2.5 h-2.5 mr-1" />
                 {t("settingsManager.analyzer.hooks")}
               </Badge>
             )}
@@ -169,7 +174,58 @@ const FileCard: React.FC<{
       </div>
     </div>
   );
+});
+
+FileCard.displayName = "FileCard";
+
+const SEVERITY_ICON: Record<IssueSeverity, { Icon: typeof XCircle; className: string }> = {
+  error: { Icon: XCircle, className: "text-destructive" },
+  warning: { Icon: AlertTriangle, className: "text-amber-500" },
+  info: { Icon: Info, className: "text-blue-500" },
 };
+
+const SEVERITY_BORDER: Record<IssueSeverity, string> = {
+  error: "border-destructive/30 bg-destructive/5",
+  warning: "border-amber-500/30 bg-amber-500/5",
+  info: "border-blue-500/20 bg-blue-500/5",
+};
+
+const IssueCard = React.memo<{ issue: SettingsIssue }>(({ issue }) => {
+  const { t } = useTranslation();
+  const { Icon, className: iconClass } = SEVERITY_ICON[issue.severity];
+
+  return (
+    <div className={`p-3 rounded-lg border ${SEVERITY_BORDER[issue.severity]}`}>
+      <div className="flex items-start gap-3">
+        <Icon aria-hidden className={`w-4 h-4 shrink-0 mt-0.5 ${iconClass}`} />
+        <div className="flex-1 min-w-0 space-y-1">
+          <p className="text-sm font-medium">
+            {t(issue.titleKey)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {t(issue.descriptionKey, issue.descriptionParams ?? {})}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {issue.affectedScopes.map((scope) => (
+              <Badge
+                key={scope}
+                variant="outline"
+                className={`text-[9px] px-1.5 py-0 ${SCOPE_COLORS[scope] ?? ""}`}
+              >
+                {t(`settingsManager.analyzer.scope.${scope}`)}
+              </Badge>
+            ))}
+          </div>
+          <p className="text-[11px] italic text-muted-foreground/70">
+            {t(issue.recommendationKey)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+IssueCard.displayName = "IssueCard";
 
 // ============================================================================
 // Main Component
@@ -185,7 +241,15 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
 
   const [activeTab, setActiveTab] = useState("overview");
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveResult, setSaveResult] = useState<SaveResult>(null);
+
+  // Auto-dismiss save result
+  React.useEffect(() => {
+    if (saveResult) {
+      const timer = setTimeout(() => setSaveResult(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveResult]);
 
   // Analyze all settings files
   const analysis = useMemo(() => {
@@ -197,11 +261,11 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
       path: string,
       scope: FileAnalysis["scope"]
     ): FileAnalysis => {
-      if (!content) {
+      if (!content || content === "{}") {
         return {
           path,
           scope,
-          exists: false,
+          exists: content != null,
           settingsCount: 0,
           mcpCount: 0,
           hasPermissions: false,
@@ -231,7 +295,7 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
         return {
           path,
           scope,
-          exists: false,
+          exists: true,
           settingsCount: 0,
           mcpCount: 0,
           hasPermissions: false,
@@ -242,12 +306,12 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
     };
 
     // Global (~/.claude.json) - MCP servers live here
-    const globalMcpCount =
-      Object.keys(mcpServers.userClaudeJson || {}).length;
+    const globalMcpServers = mcpServers.userClaudeJson || {};
+    const globalMcpCount = Object.keys(globalMcpServers).length;
     files.push({
       path: "~/.claude.json",
       scope: "global",
-      exists: globalMcpCount > 0,
+      exists: globalMcpCount > 0 || mcpServers.userClaudeJson != null,
       settingsCount: 0,
       mcpCount: globalMcpCount,
       hasPermissions: false,
@@ -271,11 +335,12 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
       );
 
       // Project MCP (.mcp.json)
-      const projectMcpCount = Object.keys(mcpServers.projectMcpFile || {}).length;
+      const projectMcpServers = mcpServers.projectMcpFile || {};
+      const projectMcpCount = Object.keys(projectMcpServers).length;
       files.push({
         path: ".mcp.json",
         scope: "project",
-        exists: projectMcpCount > 0,
+        exists: projectMcpCount > 0 || mcpServers.projectMcpFile != null,
         settingsCount: 0,
         mcpCount: projectMcpCount,
         hasPermissions: false,
@@ -296,25 +361,39 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
     return files;
   }, [allSettings, mcpServers, projectPath]);
 
+  // Merge settings for issue detection
+  const merged = useMemo(
+    () => (allSettings ? mergeSettings(allSettings) : null),
+    [allSettings]
+  );
+
+  // Detect all issues
+  const issues = useMemo(
+    () => detectSettingsIssues(allSettings, mcpServers, merged),
+    [allSettings, mcpServers, merged]
+  );
+
+  const issueCounts = useMemo(() => {
+    const errors = issues.filter((i) => i.severity === "error").length;
+    const warnings = issues.filter((i) => i.severity === "warning").length;
+    const infos = issues.filter((i) => i.severity === "info").length;
+    return { errors, warnings, infos, total: issues.length };
+  }, [issues]);
+
   // Summary statistics
   const summary = useMemo(() => {
-    const existingFiles = analysis.filter((f) => f.exists);
     const totalSettings = analysis.reduce((sum, f) => sum + f.settingsCount, 0);
     const totalMcp = analysis.reduce((sum, f) => sum + f.mcpCount, 0);
-    const hasFragmentation = existingFiles.length > 2;
+    const hasIssues = issues.length > 0;
+    const hasMcpInSettings = issues.some((i) => i.type === "mcp_in_settings");
 
-    return {
-      fileCount: existingFiles.length,
-      totalSettings,
-      totalMcp,
-      hasFragmentation,
-      existingFiles,
-    };
-  }, [analysis]);
+    return { totalSettings, totalMcp, hasIssues, hasMcpInSettings };
+  }, [analysis, issues]);
 
   // Create full backup preset
-  const handleCreateBackup = async () => {
+  const handleCreateBackup = useCallback(async () => {
     setIsSaving(true);
+    setSaveResult(null);
     try {
       // Merge all settings
       const effectiveSettings = allSettings ? mergeSettings(allSettings).effective : {};
@@ -327,29 +406,37 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
       };
 
       const input: UnifiedPresetInput = {
-        name: `Full Backup ${new Date().toLocaleDateString()}`,
+        name: t("settingsManager.analyzer.backupName", {
+          date: new Date().toLocaleDateString(),
+        }),
         description: t("settingsManager.analyzer.backupDescription"),
         settings: JSON.stringify(effectiveSettings),
         mcpServers: JSON.stringify(allMcpServers),
       };
 
       await savePreset(input);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-    } catch (error) {
-      console.error("Failed to create backup:", error);
+      setSaveResult({
+        type: "success",
+        message: t("settingsManager.analyzer.backupCreated"),
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setSaveResult({
+        type: "error",
+        message: t("settingsManager.analyzer.backupError", { error: errorMessage }),
+      });
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [allSettings, mcpServers, savePreset, t]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <FolderTree className="w-5 h-5 text-accent" />
+            <FolderTree aria-hidden className="w-5 h-5 text-accent" />
             {t("settingsManager.analyzer.title")}
           </DialogTitle>
           <DialogDescription className="text-sm">
@@ -389,46 +476,59 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
             value="overview"
             className="flex-1 overflow-auto m-0 p-6 space-y-6"
           >
-            {/* Status Banner */}
-            <div
-              className={`flex items-start gap-3 p-4 rounded-lg border ${
-                summary.hasFragmentation
-                  ? "bg-amber-500/5 border-amber-500/20"
-                  : "bg-emerald-500/5 border-emerald-500/20"
-              }`}
-            >
-              {summary.hasFragmentation ? (
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              ) : (
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-              )}
-              <div>
-                <p className="text-sm font-medium">
-                  {summary.hasFragmentation
-                    ? t("settingsManager.analyzer.status.fragmented", {
-                        count: summary.fileCount,
-                      })
-                    : t("settingsManager.analyzer.status.organized")}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("settingsManager.analyzer.status.summary", {
-                    settings: summary.totalSettings,
-                    mcp: summary.totalMcp,
-                  })}
-                </p>
+            {/* Issues Section */}
+            <div className="space-y-3">
+              <div
+                className={`flex items-center gap-3 p-3 rounded-lg border ${
+                  issueCounts.errors > 0
+                    ? "bg-destructive/5 border-destructive/20"
+                    : issueCounts.warnings > 0
+                      ? "bg-amber-500/5 border-amber-500/20"
+                      : "bg-emerald-500/5 border-emerald-500/20"
+                }`}
+              >
+                {issueCounts.total === 0 ? (
+                  <CheckCircle2 aria-hidden className="w-5 h-5 text-emerald-500 shrink-0" />
+                ) : issueCounts.errors > 0 ? (
+                  <XCircle aria-hidden className="w-5 h-5 text-destructive shrink-0" />
+                ) : (
+                  <AlertTriangle aria-hidden className="w-5 h-5 text-amber-500 shrink-0" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">
+                    {issueCounts.total === 0
+                      ? t("settingsManager.analyzer.issues.noIssues")
+                      : t("settingsManager.analyzer.issues.summary", { count: issueCounts.total })}
+                  </p>
+                  {issueCounts.total > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("settingsManager.analyzer.issues.summaryDetail", {
+                        errors: issueCounts.errors,
+                        warnings: issueCounts.warnings,
+                        infos: issueCounts.infos,
+                      })}
+                    </p>
+                  )}
+                </div>
               </div>
+
+              {issues.map((issue) => (
+                <IssueCard key={issue.id} issue={issue} />
+              ))}
             </div>
+
+            <hr className="border-border/50" />
 
             {/* File List */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium flex items-center gap-2">
-                <FileJson className="w-4 h-4" />
+                <FileJson aria-hidden className="w-4 h-4" />
                 {t("settingsManager.analyzer.fileList")}
               </h3>
               <div className="space-y-3">
-                {analysis.map((file, index) => (
+                {analysis.map((file) => (
                   <FileCard
-                    key={index}
+                    key={file.path}
                     analysis={file}
                     isHighlighted={file.exists && file.mcpCount > 0}
                   />
@@ -437,28 +537,34 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
             </div>
 
             {/* Backup Action */}
-            <div className="border-t border-border/50 pt-4">
+            <div className="border-t border-border/50 pt-4 space-y-2">
               <Button
                 onClick={handleCreateBackup}
                 disabled={isSaving || summary.totalSettings + summary.totalMcp === 0}
                 className="w-full"
-                variant={saveSuccess ? "outline" : "default"}
+                variant={saveResult?.type === "success" ? "outline" : "default"}
               >
-                {saveSuccess ? (
+                {saveResult?.type === "success" ? (
                   <>
-                    <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" />
-                    {t("settingsManager.analyzer.backupCreated")}
+                    <CheckCircle2 aria-hidden className="w-4 h-4 mr-2 text-emerald-500" />
+                    {saveResult.message}
                   </>
                 ) : (
                   <>
-                    <Package className="w-4 h-4 mr-2" />
+                    <Package aria-hidden className="w-4 h-4 mr-2" />
                     {isSaving
                       ? t("common.loading")
                       : t("settingsManager.analyzer.createBackup")}
                   </>
                 )}
               </Button>
-              <p className="text-[10px] text-muted-foreground text-center mt-2">
+              {saveResult?.type === "error" && (
+                <div className="flex items-center gap-2 p-2 rounded-md bg-destructive/10 text-destructive text-xs">
+                  <XCircle aria-hidden className="w-3.5 h-3.5 shrink-0" />
+                  <span>{saveResult.message}</span>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground text-center">
                 {t("settingsManager.analyzer.backupHint")}
               </p>
             </div>
@@ -472,7 +578,7 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
             {/* Why Complex Section */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-amber-500" />
+                <HelpCircle aria-hidden className="w-4 h-4 text-amber-500" />
                 {t("settingsManager.analyzer.whyComplex.title")}
               </h3>
               <div className="bg-muted/30 rounded-lg p-4 space-y-3 text-sm text-muted-foreground">
@@ -482,18 +588,23 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
               </div>
             </div>
 
-            {/* Recommended Structure */}
+            {/* Recommended Structure with live status */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium flex items-center gap-2">
-                <FolderTree className="w-4 h-4 text-emerald-500" />
+                <FolderTree aria-hidden className="w-4 h-4 text-emerald-500" />
                 {t("settingsManager.analyzer.recommended.title")}
               </h3>
+              <p className="text-xs text-muted-foreground">
+                {summary.hasIssues
+                  ? t("settingsManager.analyzer.recommended.currentMismatch")
+                  : t("settingsManager.analyzer.recommended.currentMatch")}
+              </p>
               <div className="bg-card border border-border/50 rounded-lg p-4 font-mono text-xs space-y-1">
                 <div className="text-muted-foreground">
                   <span className="text-emerald-500">~/.claude/</span>
                 </div>
                 <div className="pl-4 flex items-center gap-2">
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
+                  <ChevronRight aria-hidden className="w-3 h-3 text-muted-foreground/50" />
                   <span>settings.json</span>
                   <Badge variant="outline" className="text-[9px] h-4">
                     {t("settingsManager.analyzer.recommended.globalSettings")}
@@ -509,21 +620,21 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
                   <span className="text-blue-500">your-project/</span>
                 </div>
                 <div className="pl-4 flex items-center gap-2">
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
+                  <ChevronRight aria-hidden className="w-3 h-3 text-muted-foreground/50" />
                   <span>.mcp.json</span>
                   <Badge variant="outline" className="text-[9px] h-4">
                     {t("settingsManager.analyzer.recommended.projectMcp")}
                   </Badge>
                 </div>
                 <div className="pl-4 flex items-center gap-2">
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
+                  <ChevronRight aria-hidden className="w-3 h-3 text-muted-foreground/50" />
                   <span>.claude/settings.json</span>
                   <Badge variant="outline" className="text-[9px] h-4">
                     {t("settingsManager.analyzer.recommended.teamSettings")}
                   </Badge>
                 </div>
                 <div className="pl-4 flex items-center gap-2 text-muted-foreground/60">
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
+                  <ChevronRight aria-hidden className="w-3 h-3 text-muted-foreground/30" />
                   <span>.claude/settings.local.json</span>
                   <Badge variant="outline" className="text-[9px] h-4 opacity-50">
                     gitignore
@@ -535,24 +646,24 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
             {/* Priority Order */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium flex items-center gap-2">
-                <Info className="w-4 h-4 text-blue-500" />
+                <Info aria-hidden className="w-4 h-4 text-blue-500" />
                 {t("settingsManager.analyzer.priority.title")}
               </h3>
               <div className="flex items-center gap-2 text-xs">
                 <Badge variant="secondary" className="bg-purple-500/10 text-purple-600">
-                  Local
+                  {t("settingsManager.analyzer.scope.local")}
                 </Badge>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                <ChevronRight aria-hidden className="w-3 h-3 text-muted-foreground" />
                 <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600">
-                  Project
+                  {t("settingsManager.analyzer.scope.project")}
                 </Badge>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                <ChevronRight aria-hidden className="w-3 h-3 text-muted-foreground" />
                 <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
-                  User
+                  {t("settingsManager.analyzer.scope.user")}
                 </Badge>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                <ChevronRight aria-hidden className="w-3 h-3 text-muted-foreground" />
                 <Badge variant="secondary" className="bg-amber-500/10 text-amber-600">
-                  Global
+                  {t("settingsManager.analyzer.scope.global")}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -566,8 +677,9 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-xs text-accent hover:underline"
+              aria-label={t("settingsManager.analyzer.officialDocs")}
             >
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink aria-hidden className="w-3 h-3" />
               {t("settingsManager.analyzer.officialDocs")}
             </a>
           </TabsContent>
@@ -577,15 +689,27 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
             value="mcp"
             className="flex-1 overflow-auto m-0 p-6 space-y-6"
           >
+            {/* Live warning if MCP in settings.json */}
+            {summary.hasMcpInSettings && (
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                <AlertTriangle aria-hidden className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">
+                    {t("settingsManager.analyzer.status.mcpInSettings")}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* MCP Locations */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium flex items-center gap-2">
-                <Server className="w-4 h-4 text-purple-500" />
+                <Server aria-hidden className="w-4 h-4 text-purple-500" />
                 {t("settingsManager.analyzer.mcp.title")}
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                  <Home className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <Home aria-hidden className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <div>
                     <code className="text-xs font-mono">~/.claude.json</code>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -594,7 +718,7 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-                  <FolderTree className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <FolderTree aria-hidden className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                   <div>
                     <code className="text-xs font-mono">.mcp.json</code>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -607,7 +731,7 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
 
             {/* Important Note */}
             <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <AlertTriangle aria-hidden className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-destructive">
                   {t("settingsManager.analyzer.mcp.warning.title")}
@@ -641,7 +765,7 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
             {/* Use Presets */}
             <div className="border-t border-border/50 pt-4">
               <div className="flex items-center gap-3 p-4 rounded-lg bg-accent/5 border border-accent/20">
-                <Package className="w-8 h-8 text-accent shrink-0" />
+                <Package aria-hidden className="w-8 h-8 text-accent shrink-0" />
                 <div>
                   <p className="text-sm font-medium">
                     {t("settingsManager.analyzer.mcp.usePresets.title")}
