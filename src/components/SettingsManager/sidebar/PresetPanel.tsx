@@ -321,11 +321,12 @@ export const PresetPanel: React.FC = () => {
     });
 
     const homeDir = detectHomeDir(projects.map((p) => p.actual_path));
+    const normalizedHomeDir = homeDir?.replace(/\\+/g, "/") ?? null;
 
     return Array.from(groups.entries())
       .map(([path, projs]) => ({
         path,
-        name: formatDisplayPath(path, homeDir),
+        name: formatDisplayPath(path, normalizedHomeDir),
         projects: projs.sort((a, b) => a.name.localeCompare(b.name)),
       }))
       .sort((a, b) => a.path.localeCompare(b.path));
@@ -368,6 +369,7 @@ export const PresetPanel: React.FC = () => {
     setSelectedPreset(preset ?? null);
     setIsJsonExpanded(false);
     setFormNameError(null);
+    setApplyError(null);
 
     if (mode === "create") {
       setFormName("");
@@ -623,6 +625,7 @@ export const PresetPanel: React.FC = () => {
         await saveMCPServers(mcpSource, serversRaw as Parameters<typeof saveMCPServers>[1], targetProject);
       }
 
+      setApplyError(null);
       setApplySuccess(true);
       // Clear any existing timeout before setting a new one
       if (closeDialogTimeoutRef.current) {

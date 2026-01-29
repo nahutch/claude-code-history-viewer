@@ -141,9 +141,9 @@ export const ContextSelector: React.FC<ContextSelectorProps> = React.memo(
       return "user";
     }, [activeScope]);
 
-    // Home directory for path formatting
+    // Home directory for path formatting (normalize backslashes for Windows compatibility)
     const homeDir = useMemo(
-      () => detectHomeDir(projects.map((p) => p.actual_path)),
+      () => detectHomeDir(projects.map((p) => p.actual_path))?.replace(/\\+/g, "/") ?? null,
       [projects]
     );
 
