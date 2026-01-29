@@ -261,14 +261,18 @@ export const PresetPanel: React.FC = () => {
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
-  // Ref for cleanup of setTimeout to prevent memory leaks
+  // Refs for cleanup of setTimeout to prevent memory leaks
   const closeDialogTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const applySuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (closeDialogTimeoutRef.current) {
         clearTimeout(closeDialogTimeoutRef.current);
+      }
+      if (applySuccessTimeoutRef.current) {
+        clearTimeout(applySuccessTimeoutRef.current);
       }
     };
   }, []);
@@ -377,17 +381,21 @@ export const PresetPanel: React.FC = () => {
     } else if (mode === "edit" && preset) {
       setFormName(preset.name);
       setFormDescription(preset.description ?? "");
+      const parseErrors: string[] = [];
+      let parsedSettings: Record<string, unknown> = {};
+      let parsedMcpServers: Record<string, unknown> = {};
       try {
-        const jsonObj = {
-          settings: JSON.parse(preset.settings || "{}"),
-          mcpServers: JSON.parse(preset.mcpServers || "{}"),
-        };
-        setFormJsonText(JSON.stringify(jsonObj, null, 2));
-        setFormJsonError(null);
-      } catch {
-        setFormJsonText(preset.settings || "{}");
-        setFormJsonError(null);
+        parsedSettings = JSON.parse(preset.settings || "{}") as Record<string, unknown>;
+      } catch (e) {
+        parseErrors.push(`settings: ${e instanceof Error ? e.message : String(e)}`);
       }
+      try {
+        parsedMcpServers = JSON.parse(preset.mcpServers || "{}") as Record<string, unknown>;
+      } catch (e) {
+        parseErrors.push(`mcpServers: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      setFormJsonText(JSON.stringify({ settings: parsedSettings, mcpServers: parsedMcpServers }, null, 2));
+      setFormJsonError(parseErrors.length > 0 ? `Parse error: ${parseErrors.join("; ")}` : null);
     } else if (mode === "duplicate" && preset) {
       setFormName(`${preset.name} (Copy)`);
       setFormDescription(preset.description ?? "");
@@ -467,6 +475,7 @@ export const PresetPanel: React.FC = () => {
   const handleUpdatePreset = async () => {
     if (!formName.trim() || !selectedPreset) return;
     if (!validatePresetName(formName, selectedPreset.id)) return;
+    if (formJsonError) return;
 
     let settingsJson = selectedPreset.settings;
     let mcpServersJson = selectedPreset.mcpServers;
@@ -569,8 +578,11 @@ export const PresetPanel: React.FC = () => {
       }
 
       setApplyError(null);
+      if (applySuccessTimeoutRef.current) {
+        clearTimeout(applySuccessTimeoutRef.current);
+      }
       setApplySuccess(true);
-      setTimeout(() => setApplySuccess(false), 2000);
+      applySuccessTimeoutRef.current = setTimeout(() => setApplySuccess(false), 2000);
     } catch (e) {
       const errorMsg = `Failed to apply preset "${preset.name}": ${e instanceof Error ? e.message : String(e)}`;
       console.error(errorMsg);
